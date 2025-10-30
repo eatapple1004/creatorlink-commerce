@@ -26,3 +26,16 @@ export const getTotalPointsByCreator = async (creatorId) => {
   );
   return result.rows[0].total_points;
 };
+
+
+
+export const getRewardSummary = async (creatorId) => {
+    const query = `
+      SELECT 
+        COALESCE(SUM(points), 0) AS total_points
+      FROM reward_points
+      WHERE creator_id = $1
+    `;
+    const { rows } = await pool.query(query, [creatorId]);
+    return rows[0];
+};

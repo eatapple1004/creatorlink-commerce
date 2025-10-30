@@ -3,9 +3,10 @@ import {
     findCreatorByReferralCode,
     insertRewardRecord,
     getTotalPointsByCreator,
+    getRewardSummary
   } from "../repositories/reward.repository.js";
   
-  export const addRewardService = async (referralCode, amount) => {
+export const addRewardService = async (referralCode, amount) => {
     // 1️⃣ 추천 코드 유효성 검사
     const creator = await findCreatorByReferralCode(referralCode);
     if (!creator) throw new Error("INVALID_REFERRAL_CODE");
@@ -24,5 +25,8 @@ import {
       earnedPoints: points,
       totalPoints,
     };
-  };
+};
   
+export const getRewardSummaryService = async (creatorId) => {
+    return await getRewardSummary(creatorId);
+};

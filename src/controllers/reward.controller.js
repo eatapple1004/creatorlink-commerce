@@ -1,5 +1,5 @@
 // src/controllers/reward.controller.js
-import { addRewardService } from "../services/reward.service.js";
+import { addRewardService, getRewardSummaryService } from "../services/reward.service.js";
 
 export const addReward = async (req, res) => {
   try {
@@ -27,4 +27,16 @@ export const addReward = async (req, res) => {
 
     res.status(500).json({ message: "서버 오류" });
   }
+};
+
+
+export const getRewardSummary = async (req, res) => {
+    try {
+      const creatorId = req.params.creatorId || req.user?.id;
+      const summary = await getRewardSummaryService(creatorId);
+      res.status(200).json({ message: "요약 조회 성공", summary });
+    } catch (err) {
+      console.error("❌ getRewardSummary error:", err);
+      res.status(500).json({ message: "요약 조회 실패" });
+    }
 };
