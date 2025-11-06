@@ -12,10 +12,10 @@ const generateReferralCode = (name) => {
 
 // ✅ 회원가입 컨트롤러
 export const registerUser = async (req, res) => {
-    const { email, password, paypal_id } = req.body;
+    const { name, email, password, paypal_id } = req.body;
   
     try {
-      const newUser = await registerUserService({ email, password, paypal_id });
+      const newUser = await registerUserService({ name, email, password, paypal_id });
       res.status(201).json({
         message: "회원가입 성공",
         user: newUser,

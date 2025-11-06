@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { findUserByEmail, insertUser } from "../repositories/auth.repository.js";
 
 // ✅ 회원가입 서비스
-export const registerUserService = async ({ email, password, paypal_id }) => {
+export const registerUserService = async ({ name, email, password, paypal_id }) => {
     // 1️⃣ 이메일 중복 확인
     const existingUser = await findUserByEmail(email);
     if (existingUser) {
@@ -15,6 +15,7 @@ export const registerUserService = async ({ email, password, paypal_id }) => {
 
     // 3️⃣ DB 저장
     const newUser = await insertUser({
+        name,
         email,
         password: hashedPassword,
         paypal_id,

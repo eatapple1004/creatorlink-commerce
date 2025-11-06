@@ -8,13 +8,13 @@ export const findUserByEmail = async (email) => {
 };
 
 // ✅ 새 사용자 등록
-export const insertUser = async ({ email, password, paypal_id }) => {
+export const insertUser = async ({ name, email, password, paypal_id }) => {
   const query = `
-    INSERT INTO users (email, password, paypal_id, created_at)
-    VALUES ($1, $2, $3, NOW())
-    RETURNING id, email, paypal_id, created_at;
+    INSERT INTO users (name, email, password, paypal_id, created_at)
+    VALUES ($1, $2, $3, $4, NOW())
+    RETURNING id, name, email, paypal_id, created_at;
   `;
-  const values = [email, password, paypal_id];
+  const values = [name, email, password, paypal_id];
   const result = await pool.query(query, values);
   return result.rows[0];
 };
