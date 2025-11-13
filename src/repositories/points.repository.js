@@ -60,3 +60,16 @@ export const insertTransaction = async ({
   ]);
   return result.rows[0];
 };
+
+/**
+ * 추천코드로 앰버서더 조회
+ */
+ export const findAmbassadorByReferralCode = async (referralCode) => {
+    const query = `
+        SELECT id AS ambassador_id
+        FROM ambassador_profile
+        WHERE referral_code = $1
+    `;
+    const result = await pool.query(query, [referralCode]);
+    return result.rows[0];
+};
