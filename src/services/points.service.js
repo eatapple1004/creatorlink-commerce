@@ -1,80 +1,72 @@
 import {
-    getPointsByAmbassador,
-    updatePoints,
-    insertTransactionLog,
-} from "../repositories/points.repository.js";
-import { transaction } from "../config/dbClient.js";
+    findPointsByAmbassador,
+    savePoints,
+    insertTransaction,
+  } from "../repositories/points.repository.js";
+  import { transaction } from "../config/dbClient.js";
   
-// 포인트 적립
+/**
+ * 포인트 적립 서비스
+ */
 export const addPointsService = async ({ ambassador_id, amount, description }) => {
     return transaction(async (client) => {
-      const { rows } = await client.query(
-        "SELECT * FROM ambassador_points WHERE ambassador_id = $1 FOR UPDATE",
-        [ambassador_id]
-      );
-      const record = rows[0];
-  
-      if (!record) throw new Error("POINTS_RECORD_NOT_FOUND");
-  
-      const newCurrent = record.current_points + amount;
-      const newEarned = record.total_earned + amount;
-  
-      // 업데이트
-      await client.query(
-        `
-        UPDATE ambassador_points
-        SET current_points = $1, total_earned = $2, last_updated_at = NOW()
-        WHERE ambassador_id = $3;
-      `,
-        [newCurrent, newEarned, ambassador_id]
-      );
-  
-      // 트랜잭션 로그 기록
-      await insertTransactionLog({
-        ambassador_id,
-        type: "earn",
-        amount,
-        balance_after: newCurrent,
-        description,
-      });
-  
-      return { current_points: newCurrent, total_earned: newEarned };
+        // 1️⃣ 현재 포인트 정보 조회
+        const record = await findPointsByAmbassador(ambassador_id);
+        if (!record) throw new Error("POINTS_RECORD_NOT_FOUND");
+    
+        // 2️⃣ 비즈니스 로직: 적립 계산
+        const updated = {
+            current_points: record.current_points + amount,
+            total_earned: record.total_earned + amount,
+            total_withdrawn: record.total_withdrawn,
+        };
+    
+        // 3️⃣ 저장
+        const newRecord = await savePoints(ambassador_id, updated);
+    
+        // 4️⃣ 거래 로그 기록
+        await insertTransaction({
+            ambassador_id,
+            type: "earn",
+            amount,
+            balance_after: newRecord.current_points,
+            description,
+        });
+    
+        return newRecord;
     });
   };
   
-// 포인트 출금 (차감)
+/**
+ * 포인트 차감 서비스
+ */
 export const withdrawPointsService = async ({ ambassador_id, amount, description }) => {
     return transaction(async (client) => {
-      const { rows } = await client.query(
-        "SELECT * FROM ambassador_points WHERE ambassador_id = $1 FOR UPDATE",
-        [ambassador_id]
-      );
-      const record = rows[0];
-  
-      if (!record) throw new Error("POINTS_RECORD_NOT_FOUND");
-      if (record.current_points < amount) throw new Error("INSUFFICIENT_BALANCE");
-  
-      const newCurrent = record.current_points - amount;
-      const newWithdrawn = record.total_withdrawn + amount;
-  
-      await client.query(
-        `
-        UPDATE ambassador_points
-        SET current_points = $1, total_withdrawn = $2, last_updated_at = NOW()
-        WHERE ambassador_id = $3;
-      `,
-        [newCurrent, newWithdrawn, ambassador_id]
-      );
-  
-      await insertTransactionLog({
-        ambassador_id,
-        type: "withdraw",
-        amount: -amount,
-        balance_after: newCurrent,
-        description,
-      });
-  
-      return { current_points: newCurrent, total_withdrawn: newWithdrawn };
+        // 1️⃣ 현재 포인트 정보 조회
+        const record = await findPointsByAmbassador(ambassador_id);
+        if (!record) throw new Error("POINTS_RECORD_NOT_FOUND");
+        if (record.current_points < amount) throw new Error("INSUFFICIENT_BALANCE");
+    
+        // 2️⃣ 비즈니스 로직: 차감 계산
+        const updated = {
+            current_points: record.current_points - amount,
+            total_earned: record.total_earned,
+            total_withdrawn: record.total_withdrawn + amount,
+        };
+    
+        // 3️⃣ 저장
+        const newRecord = await savePoints(ambassador_id, updated);
+    
+        // 4️⃣ 거래 로그 기록
+        await insertTransaction({
+            ambassador_id,
+            type: "withdraw",
+            amount: -amount,
+            balance_after: newRecord.current_points,
+            description,
+        });
+    
+        return newRecord;
     });
-};
+  };
   

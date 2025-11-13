@@ -1,17 +1,21 @@
 import pool from "../config/db.js";
 
-// 포인트 조회
-export const getPointsByAmbassador = async (ambassadorId) => {
-  const query = `
-    SELECT * FROM ambassador_points
-    WHERE ambassador_id = $1;
-  `;
-  const result = await pool.query(query, [ambassadorId]);
+/**
+ * 특정 엠버서더 포인트 레코드 조회
+ */
+export const findPointsByAmbassador = async (ambassadorId) => {
+  const result = await pool.query(
+    "SELECT * FROM ambassador_points WHERE ambassador_id = $1",
+    [ambassadorId]
+  );
   return result.rows[0];
 };
 
-// 포인트 업데이트
-export const updatePoints = async (ambassadorId, current, earned, withdrawn) => {
+/**
+ * 포인트 레코드 갱신
+ */
+export const savePoints = async (ambassadorId, updates) => {
+  const { current_points, total_earned, total_withdrawn } = updates;
   const query = `
     UPDATE ambassador_points
     SET 
@@ -22,12 +26,15 @@ export const updatePoints = async (ambassadorId, current, earned, withdrawn) => 
     WHERE ambassador_id = $4
     RETURNING *;
   `;
-  const result = await pool.query(query, [current, earned, withdrawn, ambassadorId]);
+  const values = [current_points, total_earned, total_withdrawn, ambassadorId];
+  const result = await pool.query(query, values);
   return result.rows[0];
 };
 
-// 거래 로그 기록
-export const insertTransactionLog = async ({
+/**
+ * 거래 로그 추가
+ */
+export const insertTransaction = async ({
   ambassador_id,
   type,
   amount,
