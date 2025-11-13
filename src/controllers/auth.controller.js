@@ -12,22 +12,20 @@ const generateReferralCode = (name) => {
 
 // ✅ 회원가입 컨트롤러
 export const registerUser = async (req, res) => {
-    const { name, email, password, paypal_id } = req.body;
-  
     try {
-      const newUser = await registerUserService({ name, email, password, paypal_id });
-      res.status(201).json({
-        message: "회원가입 성공",
-        user: newUser,
-      });
-    } catch (err) {
-      console.error("❌ registerUser error:", err.message);
-  
-      if (err.message === "EMAIL_EXISTS") {
-        return res.status(400).json({ message: "이미 존재하는 이메일입니다." });
-      }
-  
-      res.status(500).json({ message: "서버 오류" });
+        const { name, email, password, paypal_id } = req.body;
+        if (!name || !email || !password || !paypal_id)
+            return res.status(400).json({ message: "모든 필드를 입력해주세요." });
+
+        const user = await registerAmbassador({ name, email, password, paypal_id });
+
+        res.status(201).json({
+            message: "회원가입 성공",
+            user,
+        });
+        } catch (err) {
+        console.error("❌ registerUser error:", err);
+        res.status(500).json({ message: err.message || "서버 오류" });
     }
 };
 
