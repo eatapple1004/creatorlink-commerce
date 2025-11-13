@@ -1,55 +1,83 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { findUserByEmail, insertUser } from "../repositories/auth.repository.js";
+import { findUserByEmail, insertUser, insertInitialPoints } from "../repositories/auth.repository.js";
 
-// ✅ 회원가입 서비스
-export const registerUserService = async ({ name, email, password, paypal_id }) => {
-    // 1️⃣ 이메일 중복 확인
-    const existingUser = await findUserByEmail(email);
-    if (existingUser) {
-        throw new Error("EMAIL_EXISTS");
-    }
+/**
+ * ✅ 회원가입 서비스 (앰버서더 전용)
+ */
+export const registerUserService = async ({ name, email, password, paypal_email, currency = "USD", country_code = "US" }) => {
+  // 1️⃣ 이메일 중복 확인
+  const existingUser = await findUserByEmail(email);
+  if (existingUser) {
+    throw new Error("EMAIL_EXISTS");
+  }
 
-    // 2️⃣ 비밀번호 해시
-    const hashedPassword = await bcrypt.hash(password, 10);
+  // 2️⃣ 비밀번호 해시
+  const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 3️⃣ DB 저장
-    const newUser = await insertUser({
-        name,
-        email,
-        password: hashedPassword,
-        paypal_id,
-    });
+  // 3️⃣ DB 저장
+  const newUser = await insertUser({
+    name,
+    email,
+    password: hashedPassword,
+    paypal_email,
+    currency,
+    country_code,
+  });
 
-    return newUser;
+  // 4️⃣ 포인트 초기화 (회원가입 시 0으로 시작)
+  await insertInitialPoints(newUser.id);
+
+  // 5️⃣ 반환
+  return {
+    id: newUser.id,
+    name: newUser.name,
+    email: newUser.email,
+    paypal_email: newUser.paypal_email,
+    currency: newUser.currency,
+    country_code: newUser.country_code,
+    created_at: newUser.created_at,
+  };
 };
 
-
-// ✅ 로그인 서비스
+/**
+ * ✅ 로그인 서비스 (JWT 발급)
+ */
 export const loginUserService = async ({ email, password }) => {
-    // 1️⃣ 이메일로 사용자 조회
-    const user = await findUserByEmail(email);
-    if (!user) throw new Error("USER_NOT_FOUND");
-  
-    // 2️⃣ 비밀번호 검증
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) throw new Error("INVALID_PASSWORD");
-  
-    // 3️⃣ JWT 토큰 발급
-    const token = jwt.sign(
-        { id: user.id, email: user.email },
-        process.env.JWT_SECRET,
-        { expiresIn: "7d" } // 7일 유효
-    );
-  
-    // 4️⃣ 로그인 성공 시 사용자 정보 반환
-    return {
-        token,
-        user: {
-            id: user.id,
-            email: user.email,
-            paypal_id: user.paypal_id,
-            created_at: user.created_at,
-        },
-    };
+  // 1️⃣ 이메일로 사용자 조회
+  const user = await findUserByEmail(email);
+  if (!user) throw new Error("USER_NOT_FOUND");
+
+  // 2️⃣ 비밀번호 검증
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) throw new Error("INVALID_PASSWORD");
+
+  // 3️⃣ 계정 상태 확인
+  if (user.status !== "active") throw new Error("ACCOUNT_SUSPENDED");
+
+  // 4️⃣ JWT 토큰 발급
+  const token = jwt.sign(
+    {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      paypal_email: user.paypal_email,
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+
+  // 5️⃣ 반환
+  return {
+    token,
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      paypal_email: user.paypal_email,
+      currency: user.currency,
+      country_code: user.country_code,
+      created_at: user.created_at,
+    },
+  };
 };
