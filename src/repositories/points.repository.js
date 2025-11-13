@@ -16,6 +16,7 @@ export const findPointsByAmbassador = async (ambassadorId) => {
  */
 export const savePoints = async (ambassadorId, updates) => {
   const { current_points, total_earned, total_withdrawn } = updates;
+  
   const query = `
     UPDATE ambassador_points
     SET 
