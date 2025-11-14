@@ -77,8 +77,9 @@ export const getPoints = async (req, res) => {
  */
 export const withdrawPoints = async (req, res) => {
     try {
-        const { ambassador_id, amount, description } = req.body;
-    
+        const { amount, description } = req.body;
+        const ambassador_id = req.user.id;
+        
         if (!ambassador_id || amount == null) {
             return res.status(400).json({
             success: false,

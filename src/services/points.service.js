@@ -51,13 +51,14 @@ export const addPointsByReferralCodeService = async ({ referral_code, amount, de
 };
   
   
-  /**
-   * 포인트 차감 서비스
-   */
-  export const withdrawPointsService = async ({ ambassador_id, amount, description }) => {
+/**
+ * 포인트 차감 서비스
+ */
+export const withdrawPointsService = async ({ ambassador_id, amount, description }) => {
     return transaction(async (client) => {
         // 1️⃣ 현재 포인트 정보 조회
         const record = await findPointsByAmbassador(ambassador_id);
+        
         if (!record) throw new Error("POINTS_RECORD_NOT_FOUND");
         if (record.current_points < amount) throw new Error("INSUFFICIENT_BALANCE");
             
@@ -71,7 +72,7 @@ export const addPointsByReferralCodeService = async ({ referral_code, amount, de
         const updated = {
             current_points: current - amt,
             total_earned: earned,
-            total_withdrawn: withdrawn + amt,
+            total_withdrawn: withdrawn + amount,
         };
     
         // 3️⃣ 저장
