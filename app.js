@@ -1,10 +1,13 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import authRouter from "./src/routes/auth.route.js";
-import rewardRouter from "./src/routes/reward.route.js";
-import payoutRouter from "./src/routes/payout.route.js"
-import pointsRouter from "./src/routes/points.route.js"
+
+import authRouter     from "./src/routes/auth.route.js";
+import rewardRouter   from "./src/routes/reward.route.js";
+import payoutRouter   from "./src/routes/payout.route.js"
+import pointsRouter   from "./src/routes/points.route.js"
+import withdrawRouter from "./src/routes/withdraw.route.js";
+
 import pool from "./src/config/db.js";   // ✅ import로 변경
 
 dotenv.config();
@@ -31,10 +34,11 @@ app.use(cors({
 
 
 app.use(express.json());
-app.use("/api/auth",    authRouter);
-app.use("/api/rewards", rewardRouter);
-app.use("/api/payout",  payoutRouter);
-app.use("/api/points",  pointsRouter);
+app.use("/api/auth",     authRouter);
+app.use("/api/rewards",  rewardRouter);
+app.use("/api/payout",   payoutRouter);
+app.use("/api/points",   pointsRouter);
+app.use("/api/withdraw", withdrawRouter);
 
 app.listen(process.env.PORT || 8080, () => {
   console.log(`✅ Server running on port ${process.env.PORT}`);
