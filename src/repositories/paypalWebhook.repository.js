@@ -49,13 +49,13 @@ export const markWithdrawPaid = async (client, { id, payout_item_id }) => {
  */
 export const markWithdrawFailed = async (client, { id, payout_item_id, failure_reason }) => {
     const q = `
-      UPDATE withdraw_request
-      SET status = 'failed',
-          payout_item_id = COALESCE($2, payout_item_id),
-          failure_reason = $3,
-          updated_at = NOW()
-      WHERE id = $1
-      RETURNING *;
+        UPDATE withdraw_request
+        SET status = 'failed',
+            payout_item_id = COALESCE($2, payout_item_id),
+            failure_reason = $3,
+            updated_at = NOW()
+        WHERE id = $1
+        RETURNING *;
     `;
     const r = await client.query(q, [id, payout_item_id || null, failure_reason || null]);
     return r.rows[0];
