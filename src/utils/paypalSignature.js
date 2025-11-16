@@ -10,13 +10,13 @@ export const verifyPaypalSignature = async (headers, body) => {
         const req = new paypal.core.PayPalHttpRequest("/v1/notifications/verify-webhook-signature", "POST");
         req.headers["Content-Type"] = "application/json";
         req.requestBody({
-        auth_algo: headers.authAlgo,
-        cert_url: headers.certUrl,
-        transmission_id: headers.transmissionId,
-        transmission_sig: headers.transmissionSig,
-        transmission_time: headers.transmissionTime,
-        webhook_id: headers.webhookId, // .env의 PAYPAL_WEBHOOK_ID
-        webhook_event: body,
+            auth_algo: headers.authAlgo,
+            cert_url: headers.certUrl,
+            transmission_id: headers.transmissionId,
+            transmission_sig: headers.transmissionSig,
+            transmission_time: headers.transmissionTime,
+            webhook_id: headers.webhookId, // .env의 PAYPAL_WEBHOOK_ID
+            webhook_event: body,
         });
 
         const resp = await paypalClient.execute(req);

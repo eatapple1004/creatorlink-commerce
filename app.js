@@ -7,6 +7,7 @@ import rewardRouter   from "./src/routes/reward.route.js";
 import payoutRouter   from "./src/routes/payout.route.js"
 import pointsRouter   from "./src/routes/points.route.js"
 import withdrawRouter from "./src/routes/withdraw.route.js";
+import paypalWebhook  from "./src/routes/paypalWebhook.route.js";
 
 import pool from "./src/config/db.js";   // ✅ import로 변경
 
@@ -39,6 +40,7 @@ app.use("/api/rewards",  rewardRouter);
 app.use("/api/payout",   payoutRouter);
 app.use("/api/points",   pointsRouter);
 app.use("/api/withdraw", withdrawRouter);
+app.use("/api/paypal",   withdrawRouter);
 
 app.listen(process.env.PORT || 8080, () => {
   console.log(`✅ Server running on port ${process.env.PORT}`);

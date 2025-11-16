@@ -8,12 +8,12 @@ import { processPaypalWebhookService } from "../services/paypalWebhook.service.j
 export const handlePaypalWebhook = async (req, res) => {
   try {
     const headers = {
-      transmissionId: req.header("paypal-transmission-id"),
-      transmissionTime: req.header("paypal-transmission-time"),
-      certUrl: req.header("paypal-cert-url"),
-      authAlgo: req.header("paypal-auth-algo"),
-      transmissionSig: req.header("paypal-transmission-sig"),
-      webhookId: process.env.PAYPAL_WEBHOOK_ID,
+        transmissionId: req.header("paypal-transmission-id"),
+        transmissionTime: req.header("paypal-transmission-time"),
+        certUrl: req.header("paypal-cert-url"),
+        authAlgo: req.header("paypal-auth-algo"),
+        transmissionSig: req.header("paypal-transmission-sig"),
+        webhookId: process.env.PAYPAL_WEBHOOK_ID,
     };
 
     const body = req.body;

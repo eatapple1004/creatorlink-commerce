@@ -52,42 +52,43 @@ export const processPaypalWebhookService = async (headers, body) => {
 
         // 2-3) 이벤트 분기
         if (eventType === "PAYOUTS-ITEM-SUCCEEDED") {
-        // 이미 차감된 포인트는 유지, 상태만 확정
-        await markWithdrawPaid(client, {
-            id: withdraw.id,
-            payout_item_id: payoutItemId,
-        });
-        // 추가 회계 조정 없음 (요청 시점에 차감 완료했기 때문)
+            // 이미 차감된 포인트는 유지, 상태만 확정
+            await markWithdrawPaid(client, {
+                id: withdraw.id,
+                payout_item_id: payoutItemId,
+            });
+            // 추가 회계 조정 없음 (요청 시점에 차감 완료했기 때문)
 
-        } else if (eventType === "PAYOUTS-ITEM-FAILED") {
-        // 실패 처리: 상태 failed + 실패사유 기록
-        await markWithdrawFailed(client, {
-            id: withdraw.id,
-            payout_item_id: payoutItemId,
-            failure_reason: failureReason || "PAYOUT_FAILED",
-        });
+        } 
+        else if (eventType === "PAYOUTS-ITEM-FAILED") {
+            // 실패 처리: 상태 failed + 실패사유 기록
+            await markWithdrawFailed(client, {
+                id: withdraw.id,
+                payout_item_id: payoutItemId,
+                failure_reason: failureReason || "PAYOUT_FAILED",
+            });
 
-        // 환불 회계 처리: 포인트 복구 + 거래로그(refund)
-        const points = await findPointsByAmbassador(withdraw.ambassador_id);
-        const cur = parseFloat(points.current_points);
-        const totEarn = parseFloat(points.total_earned);
-        const totWith = parseFloat(points.total_withdrawn);
+            // 환불 회계 처리: 포인트 복구 + 거래로그(refund)
+            const points = await findPointsByAmbassador(withdraw.ambassador_id);
+            const cur = parseFloat(points.current_points);
+            const totEarn = parseFloat(points.total_earned);
+            const totWith = parseFloat(points.total_withdrawn);
 
-        const refundAmt = parseFloat(withdraw.amount); // 원 요청 금액
+            const refundAmt = parseFloat(withdraw.amount); // 원 요청 금액
 
-        await savePoints(withdraw.ambassador_id, {
-            current_points: cur + refundAmt,
-            total_earned: totEarn,
-            total_withdrawn: totWith - refundAmt < 0 ? 0 : totWith - refundAmt,
-        });
+            await savePoints(withdraw.ambassador_id, {
+                current_points: cur + refundAmt,
+                total_earned: totEarn,
+                total_withdrawn: totWith - refundAmt < 0 ? 0 : totWith - refundAmt,
+            });
 
-        await insertTransaction({
-            ambassador_id: withdraw.ambassador_id,
-            type: "refund",
-            amount: refundAmt,
-            balance_after: cur + refundAmt,
-            description: `PayPal payout failed: refund points (${withdraw.id})`,
-        });
+            await insertTransaction({
+                ambassador_id: withdraw.ambassador_id,
+                type: "refund",
+                amount: refundAmt,
+                balance_after: cur + refundAmt,
+                description: `PayPal payout failed: refund points (${withdraw.id})`,
+            });
         }
 
         // 2-4) 웹훅 로그에 linked_request_id 업데이트 (선택)
