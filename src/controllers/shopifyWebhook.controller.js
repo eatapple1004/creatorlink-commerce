@@ -8,16 +8,16 @@ import logger from "../config/logger.js";
  * 🔐 Shopify HMAC Signature 검증 함수
  */
 export const verifyHmac = (req) => {
-  const secret = process.env.SHOPIFY_WEBHOOK_SECRET;
-  const hmacHeader = req.headers["x-shopify-hmac-sha256"];
-  const body = req.body; // RAW BODY
+    const secret = process.env.SHOPIFY_WEBHOOK_SECRET;
+    const hmacHeader = req.headers["x-shopify-hmac-sha256"];
+    const body = req.body; // RAW BODY
+        
+    const generated = crypto
+        .createHmac("sha256", secret)
+        .update(body)
+        .digest("base64");
 
-  const generated = crypto
-    .createHmac("sha256", secret)
-    .update(body)
-    .digest("base64");
-
-  return generated === hmacHeader;
+    return generated === hmacHeader;
 };
 
 /**
