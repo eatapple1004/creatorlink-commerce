@@ -34,7 +34,7 @@ app.use(cors({
     allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
-app.use("/api/shopify",  express.raw({ type: "*/*" }));
+app.use("/api/shopify/webhook",  express.raw({ type: "*/*" }));
 
 app.use(express.json());
 app.use("/api/auth",     authRouter);
@@ -43,7 +43,7 @@ app.use("/api/payout",   payoutRouter);
 app.use("/api/points",   pointsRouter);
 app.use("/api/withdraw", withdrawRouter);
 app.use("/api/paypal",   paypalWebhook);
-app.use("/api/shopify",  shopifyWebhook);
+app.use("/api/shopify/webhook",  shopifyWebhook);
 
 app.listen(process.env.PORT || 8080, () => {
   console.log(`✅ Server running on port ${process.env.PORT}`);
