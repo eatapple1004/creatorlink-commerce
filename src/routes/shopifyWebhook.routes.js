@@ -1,5 +1,5 @@
 import express from "express";
-import shopifyWebhookController from "../controllers/shopifyWebhook.controller.js";
+import * as shopifyWebhookController from "../controllers/shopifyWebhook.controller.js";
 
 const router = express.Router();
 
