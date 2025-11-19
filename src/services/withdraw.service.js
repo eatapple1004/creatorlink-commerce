@@ -4,8 +4,8 @@ import { transaction } from "../config/dbClient.js";
 import { v4 as uuidv4 } from "uuid";
 
 import {
-  getPaypalEmailByAmbassadorId,
-  createWithdrawRequest,
+    getPaypalEmailByAmbassadorId,
+    createWithdrawRequest,
 } from "../repositories/withdraw.repository.js";
 
 import {
