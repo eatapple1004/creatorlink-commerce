@@ -1,0 +1,27 @@
+[2025-11-19 05:21:10] info: 📥 [Shopify] orders/create webhook received.
+[2025-11-19 05:21:10] error: ❌ [Shopify] orders/create error: TypeError [ERR_INVALID_ARG_TYPE]: The "data" argument must be of type string or an instance of Buffer, TypedArray, or DataView. Received undefined
+    at Hmac.update (node:internal/crypto/hash:142:11)
+    at verifyHmac (file:///home/ubuntu/creatorlink-commerce/src/controllers/shopifyWebhook.controller.js:17:6)
+    at handleOrderCreate (file:///home/ubuntu/creatorlink-commerce/src/controllers/shopifyWebhook.controller.js:30:14)
+    at Layer.handleRequest (/home/ubuntu/creatorlink-commerce/node_modules/router/lib/layer.js:152:17)
+    at next (/home/ubuntu/creatorlink-commerce/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/ubuntu/creatorlink-commerce/node_modules/router/lib/route.js:117:3)
+    at handle (/home/ubuntu/creatorlink-commerce/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/ubuntu/creatorlink-commerce/node_modules/router/lib/layer.js:152:17)
+    at /home/ubuntu/creatorlink-commerce/node_modules/router/index.js:295:15
+    at processParams (/home/ubuntu/creatorlink-commerce/node_modules/router/index.js:582:12)
+[2025-11-19 05:21:39] info: 📥 [Shopify] orders/create webhook received.
+[2025-11-19 05:21:39] error: ❌ [Shopify] orders/create error: TypeError [ERR_INVALID_ARG_TYPE]: The "data" argument must be of type string or an instance of Buffer, TypedArray, or DataView. Received undefined
+    at Hmac.update (node:internal/crypto/hash:142:11)
+    at verifyHmac (file:///home/ubuntu/creatorlink-commerce/src/controllers/shopifyWebhook.controller.js:17:6)
+    at handleOrderCreate (file:///home/ubuntu/creatorlink-commerce/src/controllers/shopifyWebhook.controller.js:30:14)
+    at Layer.handleRequest (/home/ubuntu/creatorlink-commerce/node_modules/router/lib/layer.js:152:17)
+    at next (/home/ubuntu/creatorlink-commerce/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/ubuntu/creatorlink-commerce/node_modules/router/lib/route.js:117:3)
+    at handle (/home/ubuntu/creatorlink-commerce/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/ubuntu/creatorlink-commerce/node_modules/router/lib/layer.js:152:17)
+    at /home/ubuntu/creatorlink-commerce/node_modules/router/index.js:295:15
+    at processParams (/home/ubuntu/creatorlink-commerce/node_modules/router/index.js:582:12)
+[2025-11-19 06:18:02] info: 📥 [Shopify] orders/paid webhook received.
+[2025-11-19 06:18:02] info: 🟩 OrderPaid → order_id=38152995406010
+[2025-11-19 06:18:02] info: 🟩 [Shopify] orders/paid 선도착 처리 완료 → order_id=38152995406010

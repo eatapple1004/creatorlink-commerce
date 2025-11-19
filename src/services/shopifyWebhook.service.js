@@ -43,12 +43,12 @@ export const processOrderPaid = async (order) => {
     // orders/paid 가 먼저 도착한 경우
     if (!record) {
         await orderWebhookRepo.upsertOrder({
-        orderId,
-        discountCode: null,
-        ambassadorId: null,
-        paid: true,
-        totalPrice: amount,
-        currency
+            orderId,
+            discountCode: null,
+            ambassadorId: null,
+            paid: true,
+            totalPrice: amount,
+            currency
         });
 
         logger.info(`🟩 [Shopify] orders/paid 선도착 처리 완료 → order_id=${orderId}`);

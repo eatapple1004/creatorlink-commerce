@@ -11,7 +11,9 @@ export const verifyHmac = (req) => {
     const secret = process.env.SHOPIFY_WEBHOOK_SECRET;
     const hmacHeader = req.headers["x-shopify-hmac-sha256"];
     const body = req.body; // RAW BODY
-        
+    
+    logger.info(body);
+
     const generated = crypto
         .createHmac("sha256", secret)
         .update(body)
@@ -33,6 +35,7 @@ export const handleOrderCreate = async (req, res) => {
         }
 
         const data = JSON.parse(req.body.toString());
+        logger.info(data);
         logger.info(`🟦 OrderCreate → order_id=${data.id}`);
 
         await shopifyWebhookService.processOrderCreate(data);
