@@ -3,7 +3,7 @@ import * as shopifyWebhookController from "../controllers/shopifyWebhook.control
 
 const router = express.Router();
 
-router.post("/orders-create", shopifyWebhookController.handleOrderCreate);
-router.post("/orders-paid", shopifyWebhookController.handleOrderPaid);
+router.post("/order-create", shopifyWebhookController.handleOrderCreate);
+router.post("/order-paid", shopifyWebhookController.handleOrderPaid);
 
 export default router;
