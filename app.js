@@ -52,5 +52,5 @@ app.listen(process.env.PORT || 8080, () => {
 });
 
 app.get("/", (req, res) => {
-    res.send("🚀 Creatorlink Commerce Server is running successfully!");
+    res.send("Creatorlink Commerce Server is running successfully!");
 });

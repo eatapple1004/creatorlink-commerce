@@ -16,20 +16,3 @@ export const payoutToAmbassador = async (req, res) => {
   }
 };
 
-
-/*
- * Air Wallex Payout Controller
- * - 필요 선행 작업
- *    -> 회원가입시 이름, 계좌번호, 주소 받기
- *    -> 수취인 등록
- */
-export const payoutAmbassadorAirWallex = async (req, res) => {
-
-  try {
-    const {email, amount} = req.body;
-  }
-  catch(e) {
-    
-  }
-
-}
