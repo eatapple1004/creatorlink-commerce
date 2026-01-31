@@ -9,6 +9,7 @@ import pointsRouter   from "./src/routes/points.route.js"
 import withdrawRouter from "./src/routes/withdraw.route.js";
 import paypalWebhook  from "./src/routes/paypalWebhook.route.js";
 import shopifyWebhook from "./src/routes/shopifyWebhook.routes.js";
+import airwallex      from "./src/routes/airwallex.route.js";
 
 import pool from "./src/config/db.js";   // ✅ import로 변경
 
@@ -37,13 +38,14 @@ app.use(cors({
 app.use("/api/shopify/webhook",  express.raw({ type: "*/*" }));
 
 app.use(express.json());
-app.use("/api/auth",     authRouter);
-app.use("/api/rewards",  rewardRouter);
-app.use("/api/payout",   payoutRouter);
-app.use("/api/points",   pointsRouter);
-app.use("/api/withdraw", withdrawRouter);
-app.use("/api/paypal",   paypalWebhook);
-app.use("/api/shopify/webhook",  shopifyWebhook);
+app.use("/api/auth",            authRouter);
+app.use("/api/rewards",         rewardRouter);
+app.use("/api/payout",          payoutRouter);
+app.use("/api/points",          pointsRouter);
+app.use("/api/withdraw",        withdrawRouter);
+app.use("/api/paypal",          paypalWebhook);
+app.use("/api/shopify/webhook", shopifyWebhook);
+app.use("/api/airwallex",       airwallex);
 
 app.listen(process.env.PORT || 8080, () => {
     console.log(`✅ Server running on port ${process.env.PORT}`);
