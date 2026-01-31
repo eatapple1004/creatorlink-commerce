@@ -1,4 +1,4 @@
-import { getAirwallexTokenInfo } from '../services/airwallex.service.js';
+import { getAirwallexTokenInfo } from '../services/airwallexToken.service.js';
 
 /**
  * GET /api/airwallex/token
