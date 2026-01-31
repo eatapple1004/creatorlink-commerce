@@ -4,6 +4,7 @@ import { registerUserService, loginUserService } from "../services/auth.service.
 
 /**
  * 회원가입 컨트롤러 (앰버서더 전용)
+ * Air Wallex가 지원하는 국가와 은행 리스트를 보여준다
  */
 export const registerUser = async (req, res) => {
   try {

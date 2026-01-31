@@ -1,5 +1,11 @@
 import { sendPayout } from "../services/payout.service.js";
 
+
+/*
+ * paypal payout controller
+ * Cancled 
+ * - reason : 페이팔이 한국에서 한국 송금 지원을 안함
+ */
 export const payoutToAmbassador = async (req, res) => {
   try {
     const { email, amount } = req.body;
@@ -9,3 +15,21 @@ export const payoutToAmbassador = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
+
+
+/*
+ * Air Wallex Payout Controller
+ * - 필요 선행 작업
+ *    -> 회원가입시 이름, 계좌번호, 주소 받기
+ *    -> 수취인 등록
+ */
+export const payoutAmbassadorAirWallex = async (req, res) => {
+
+  try {
+    const {email, amount} = req.body;
+  }
+  catch(e) {
+    
+  }
+
+}
