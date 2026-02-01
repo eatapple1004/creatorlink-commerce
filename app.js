@@ -10,6 +10,7 @@ import withdrawRouter from "./src/routes/withdraw.route.js";
 import paypalWebhook  from "./src/routes/paypalWebhook.route.js";
 import shopifyWebhook from "./src/routes/shopifyWebhook.routes.js";
 import airwallex      from "./src/routes/airwallex.route.js";
+import airwallexBeneficiaryRoutes from "./src/routes/airwallexBeneficiary.routes.js";
 
 import pool from "./src/config/db.js";   // ✅ import로 변경
 
@@ -46,6 +47,7 @@ app.use("/api/withdraw",        withdrawRouter);
 app.use("/api/paypal",          paypalWebhook);
 app.use("/api/shopify/webhook", shopifyWebhook);
 app.use("/api/airwallex",       airwallex);
+app.use("/api/airwallex", airwallexBeneficiaryRoutes);
 
 app.listen(process.env.PORT || 8080, () => {
     console.log(`✅ Server running on port ${process.env.PORT}`);
