@@ -1,5 +1,6 @@
 import express from "express";
 import { getToken } from "../controllers/airwallex.controller.js";
+import { listSupportedBanks } from '../controllers/airwallexBank.controller.js';
 
 const router = express.Router();
 
@@ -9,6 +10,8 @@ const router = express.Router();
 
 // working
 router.get("/token", getToken);  // 토큰 기능
+router.get('/banks', listSupportedBanks); // 회원가입 은행 선택용
+
 
 // to-do
 
