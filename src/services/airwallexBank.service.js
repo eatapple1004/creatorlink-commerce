@@ -1,55 +1,86 @@
 import axios from 'axios';
 import { getAirwallexAccessToken, getAirwallexBaseUrl } from './airwallexAuth.service.js';
-import * as repo from '../repositories/airwallexBank.repo.js';
+import { findCachedBanks, upsertCachedBanks } from '../repositories/airwallexBank.repo.js';
 
-// 캐시 TTL(초) - 운영은 1일 권장
-const TTL_SECONDS = 24 * 60 * 60;
+const TTL_SECONDS = 24 * 60 * 60; // 1일 캐시
 
-export async function getSupportedBanks({ countryCode, transferMethod, currency }) {
-  // 1) 캐시 조회
-  const cached = await repo.findCachedBanks({ countryCode, transferMethod, currency, ttlSeconds: TTL_SECONDS });
-  if (cached) return cached;
+export async function getSupportedFinancialInstitutions({
+    bankCountryCode,
+    accountCurrency,
+    entityType,
+    transferMethod,
+    paymentMethod, // optional
+}) {
+    // ✅ (1) 캐시 조회: 기존 테이블 키로 매핑
+    const cached = await findCachedBanks({
+        countryCode: bankCountryCode,
+        transferMethod,
+        currency: accountCurrency,
+        ttlSeconds: TTL_SECONDS,
+    });
 
-  // 2) Airwallex 호출 (지원 금융기관 조회)
-  const token = await getAirwallexAccessToken();
-  const baseUrl = getAirwallexBaseUrl();
+    if (Array.isArray(cached) && cached.length > 0) {
+        return cached;
+    }
 
-  // ⚠️ Airwallex docs의 "Retrieve supported beneficiary banks" (지원 은행 조회) 페이지에 나온 엔드포인트를 사용해야 합니다. :contentReference[oaicite:2]{index=2}
-  // 아래 urlPath는 문서에 맞춰 실제 값으로 세팅하세요. (프로젝트에선 여기 상수로 분리 권장)
-  const url = `${baseUrl}/api/v1/beneficiaries/supported_banks`; // <- 문서 기준으로 교체 필요 가능
+    const token = await getAirwallexAccessToken();
+    const baseUrl = getAirwallexBaseUrl();
 
-  const resp = await axios.get(url, {
-    params: {
-      country_code: countryCode,
-      transfer_method: transferMethod,
-      currency,
-    },
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: 'application/json',
-    },
-    timeout: 20000,
-  });
+    const url = `${baseUrl}/api/v1/beneficiary_form_schemas/supported_financial_institutions`;
 
-  const banks = normalizeBanks(resp.data);
+    const params = {
+        bank_country_code: bankCountryCode,
+        account_currency: accountCurrency,
+        entity_type: entityType,
+        transfer_method: transferMethod,
+    };
+    if (paymentMethod) params.payment_method = paymentMethod;
 
-  // 3) 캐시 저장
-  await repo.upsertCachedBanks({ countryCode, transferMethod, currency, banks });
+    try {
+        const resp = await axios.get(url, {
+        params,
+        headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+        },
+        timeout: 20000,
+        });
 
-  return banks;
+        const banks = normalizeFinancialInstitutions(resp.data);
+
+        console.log('[Airwallex][banks] normalized length=', banks.length);
+
+        // ✅ (2) DB 저장: 기존 테이블 키로 매핑
+        if (banks.length > 0) {
+        await upsertCachedBanks({
+            countryCode: bankCountryCode,
+            transferMethod,
+            currency: accountCurrency,
+            banks,
+        });
+        }
+
+        return banks;
+    } catch (e) {
+        console.error('[Airwallex][banks] status=', e.response?.status);
+        console.error('[Airwallex][banks] data=', JSON.stringify(e.response?.data, null, 2));
+        throw e;
+    }
 }
 
-// Airwallex 응답 구조가 변동될 수 있어 normalize로 UI 친화적으로 고정
-function normalizeBanks(data) {
-  const arr = Array.isArray(data) ? data : (data?.items ?? data?.banks ?? []);
-  return arr.map((x) => ({
-    // UI 표시용
-    name: x.name ?? x.bank_name ?? x.institution_name,
-    // 저장/수취인등록용 키 (Airwallex가 bank_identifier를 주는 경우가 많음)
-    bank_identifier: x.bank_identifier ?? x.identifier ?? null,
-    // 한국은 3자리 bank_code가 필요할 수 있음(예: 003, 004). 이 값이 내려오면 그대로 씀.
-    bank_code: x.bank_code ?? x.routing_value ?? null,
-    // 추가 정보
-    country_code: x.country_code ?? null,
-  })).filter(b => b.name);
+function normalizeFinancialInstitutions(data) {
+    const raw =
+        Array.isArray(data) ? data :
+        Array.isArray(data?.items) ? data.items :
+        Array.isArray(data?.financial_institutions) ? data.financial_institutions :
+        [];
+
+    // ✅ 당신이 로그로 확인한 형태: {label, value}
+    return raw
+        .map((x) => ({
+        name: x.label ?? null,
+        bank_code: x.value ?? null,
+        bank_identifier: null,
+        }))
+        .filter((x) => x.name && x.bank_code);
 }

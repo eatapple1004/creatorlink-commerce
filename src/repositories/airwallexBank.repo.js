@@ -1,4 +1,4 @@
-import { pool } from '../db/pool.js';
+import pool from "../config/db.js";
 
 export async function findCachedBanks({ countryCode, transferMethod, currency, ttlSeconds }) {
   const sql = `
