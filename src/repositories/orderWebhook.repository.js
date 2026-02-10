@@ -20,9 +20,12 @@ export const upsertOrder = async ({
     VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
     ON CONFLICT (order_id)
     DO UPDATE SET
-      discount_code = EXCLUDED.discount_code,
+      discount_code = COALESCE(EXCLUDED.discount_code, order_webhook.discount_code),
       ambassador_id = EXCLUDED.ambassador_id,
-      paid = EXCLUDED.paid,
+      paid = CASE
+        WHEN order_webhook.paid = true THEN true
+        ELSE EXCLUDED.paid
+      END,
       total_price = EXCLUDED.total_price,
       currency = EXCLUDED.currency,
       updated_at = NOW()
