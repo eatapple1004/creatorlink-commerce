@@ -61,7 +61,7 @@ export const handleOrderPaid = async (req, res) => {
 
         const data = JSON.parse(req.body.toString());
         logger.info(`🟩 OrderPaid → order_id=${data.id}`);
-
+        logger.info(data);
         await shopifyWebhookService.processOrderPaid(data);
 
         res.status(200).send("ok");
