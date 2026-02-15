@@ -3,6 +3,7 @@ import {
     savePoints,
     insertTransaction,
     findAmbassadorByReferralCode,
+    existsEarnByShopifyOrder
 } from "../repositories/points.repository.js";
 import { transaction } from "../config/dbClient.js";
   
