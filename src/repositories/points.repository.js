@@ -74,3 +74,17 @@ export const insertTransaction = async ({
     const result = await pool.query(query, [referralCode]);
     return result.rows[0];
 };
+
+
+export const existsEarnByShopifyOrder = async (orderId) => {
+  const sql = `
+    SELECT 1
+    FROM transaction_log
+    WHERE type = 'earn'
+      AND reference_type = 'SHOPIFY_ORDER'
+      AND reference_id = $1
+    LIMIT 1
+  `;
+  const { rows } = await pool.query(sql, [orderId]);
+  return rows.length > 0;
+};

@@ -6,9 +6,66 @@ import logger from "../config/logger.js";
 
 const n = (v) => (v === null || v === undefined ? null : Number(v));
 
+/**
+ * Shopify webhook payload가 실제 Order 객체인지 판별
+ *
+ * 목적:
+ * - orders/create / orders/paid webhook에
+ *   Checkout, Transaction, 기타 객체가 섞여 들어오는 경우 방어
+ *
+ * 반환:
+ * - true  → 정상 Order payload
+ * - false → 처리 대상 아님 (skip)
+ */
+function isOrderPayload(o) {
+  const gid = o?.admin_graphql_api_id || "";
+  if (gid.includes("/Order/")) return true;
+
+  if (typeof o?.order_number === "number") return true;
+  if (typeof o?.name === "string" && o.name.startsWith("#") && o?.currency) return true;
+
+  return false;
+}
+
+/**
+ * Order payload에서 discount code 추출
+ *
+ * 처리 우선순위:
+ * 1) discount_codes 배열
+ * 2) discount_applications(type=discount_code)
+ *
+ * 반환:
+ * - string (discount code)
+ * - null (없을 경우)
+ */
+function extractDiscountCode(order) {
+  return (
+    order?.discount_codes?.[0]?.code ||
+    order?.discount_applications?.find((x) => x.type === "discount_code")?.code ||
+    null
+  );
+}
+
+/**
+ * orders/create webhook 처리
+ *
+ * 역할:
+ * - 주문 생성 시점의 정보 저장
+ * - discount_code → ambassador 매핑 시도
+ * - paid 여부는 false로 저장
+ *
+ * 주의:
+ * - 금액은 확정값이 아닐 수 있음
+ * - 포인트 적립은 하지 않음
+ */
 export const processOrderCreate = async (order) => {
+  if (!isOrderPayload(order)) {
+    logger.warn(`🟨 [Shopify] orders/create received but NOT an Order payload → skip (id=${order?.id})`);
+    return;
+  }
+
   const orderId = order.id;
-  const discountCode = order.discount_codes?.[0]?.code || null;
+  const discountCode = extractDiscountCode(order);
 
   let ambassador = null;
   if (discountCode) {
@@ -20,7 +77,7 @@ export const processOrderCreate = async (order) => {
     discountCode,
     ambassadorId: ambassador?.id || null,
     paid: false,
-    // create에서는 금액이 안정적이지 않을 수 있어도 들어오면 저장 가능
+
     totalPrice: n(order.total_price) ?? null,
     currency: order.currency || null,
     originalPrice: n(order.total_line_items_price) ?? null,
@@ -32,34 +89,57 @@ export const processOrderCreate = async (order) => {
   logger.info(`🟦 [Shopify] 주문 생성 처리 완료 → order_id=${orderId}`);
 };
 
+/**
+ * orders/paid webhook 처리
+ *
+ * 역할:
+ * - 결제 완료 시점의 확정 금액 저장
+ * - discount_code → ambassador 재매핑 (선도착 대비)
+ * - order_webhook을 paid=true로 확정 업데이트
+ * - ambassador 존재 시 포인트 적립 시도
+ *
+ * 멱등 보장:
+ * - 포인트 중복 적립 방지는 pointsService 내부에서
+ *   order_id 기준으로 처리해야 함
+ *
+ * 선도착 대응:
+ * - orders/paid가 orders/create보다 먼저 와도 upsert로 정상 처리됨
+ *
+ * 재전송 대응:
+ * - 동일 order_id로 여러 번 호출돼도
+ *   포인트는 한 번만 적립되도록 설계해야 함
+ */
 export const processOrderPaid = async (order) => {
+  if (!isOrderPayload(order)) {
+    logger.warn(`🟨 [Shopify] orders/paid received but NOT an Order payload → skip (id=${order?.id})`);
+    return;
+  }
+
   const orderId = order.id;
 
-  // ✅ paid payload에서 확정값 추출
+  // 결제 확정 금액 추출 (net 기준)
   const currency = order.currency || "USD";
-  const totalPrice = n(order.total_price ?? order.current_total_price);               // net
-  const originalPrice = n(order.total_line_items_price);                              // gross
-  const discountAmount = n(order.total_discounts ?? order.current_total_discounts);   // discount
+  const totalPrice = n(order.total_price ?? order.current_total_price);
+  const originalPrice = n(order.total_line_items_price);
+  const discountAmount = n(order.total_discounts ?? order.current_total_discounts);
   const subtotalPrice = n(order.subtotal_price ?? order.current_subtotal_price);
   const taxAmount = n(order.total_tax ?? order.current_total_tax);
 
-  const discountCode =
-    order.discount_codes?.[0]?.code ||
-    order.discount_applications?.find(x => x.type === "discount_code")?.code ||
-    null;
+  // discount code 재추출 (paid에서도 수행)
+  const discountCode = extractDiscountCode(order);
 
-  // ✅ ambassador 매핑은 paid에서도 수행 (선도착 대비)
   let ambassador = null;
   if (discountCode) {
     ambassador = await ambassadorRepo.findByDiscountCode(discountCode);
   }
 
-  // ✅ record 유무 상관없이 upsert로 확정 저장
+  // 주문 정보 확정 저장 (record 없으면 생성)
   const saved = await orderWebhookRepo.upsertOrder({
     orderId,
     discountCode,
     ambassadorId: ambassador?.id || null,
     paid: true,
+
     totalPrice,
     currency,
     originalPrice,
@@ -68,17 +148,20 @@ export const processOrderPaid = async (order) => {
     taxAmount,
   });
 
-  // ✅ 포인트 적립: ambassador가 있으면 즉시 시도
-  // (중복 방지는 pointsService.addPoints 내부에서 orderId 기준으로 멱등 처리하는 게 안전)
-  if (saved.ambassador_id) {
-    await pointsService.addPoints({
-      ambassadorId: saved.ambassador_id,
-      orderId,
-      amount: totalPrice,          // 정책상 net 기준
-      originalPrice,
-      discountAmount,
-      currency,
+  // ambassador 존재 시 포인트 적립 시도
+  if (saved?.ambassador_id && totalPrice !== null) {
+    const result = await pointsService.addPointsByShopifyOrderService({
+      ambassador_id: saved.ambassador_id,
+      order_id: orderId,
+      amount: totalPrice,
+      description: `Shopify 주문(${orderId}) 결제 적립`,
     });
+
+    if (result?.skipped) {
+      logger.info(`🟨 [Shopify] 포인트 적립 스킵(이미 처리됨) → order_id=${orderId}`);
+    } else {
+      logger.info(`🟩 [Shopify] 포인트 적립 완료 → order_id=${orderId}`);
+    }
   }
 
   logger.info(`🟩 [Shopify] 결제 완료 처리 완료 → order_id=${orderId}`);
