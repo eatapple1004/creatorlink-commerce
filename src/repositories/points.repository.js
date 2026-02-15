@@ -88,3 +88,21 @@ export const existsEarnByShopifyOrder = async (orderId) => {
   const { rows } = await pool.query(sql, [orderId]);
   return rows.length > 0;
 };
+
+
+/**
+ * ✅ ambassador_id로 commission_rate(%) 조회
+ * - commission_rate: numeric(5,2) ex) 5.00
+ */
+ export const getCommissionRateByAmbassadorId = async (ambassador_id, client = null) => {
+  const sql = `
+    SELECT g.commission_rate
+    FROM public.ambassador_profile ap
+    JOIN public.ambassador_grade g ON g.id = ap.grade_id
+    WHERE ap.id = $1
+    LIMIT 1
+  `;
+  const { rows } = await db(client).query(sql, [ambassador_id]);
+  // 없으면 기본 0%
+  return rows[0]?.commission_rate ?? 0;
+};
