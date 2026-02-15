@@ -1,80 +1,85 @@
 // repositories/orderWebhook.repository.js
-
 import { query } from "../config/dbClient.js";
 import pool from "../config/db.js";
 
-/**
- * ✅ 주문 생성/업데이트 (Upsert)
- * Shopify orders/create 또는 orders/paid 어느 쪽이 먼저 와도 정상 처리
- */
-export const upsertOrder = async ({ 
-  orderId, 
-  discountCode = null, 
-  ambassadorId = null, 
+export const upsertOrder = async ({
+  orderId,
+  discountCode = null,
+  ambassadorId = null,
   paid = false,
   totalPrice = null,
-  currency = null 
+  currency = null,
+
+  // ✅ 추가 저장값
+  originalPrice = null,
+  discountAmount = null,
+  subtotalPrice = null,
+  taxAmount = null,
 }) => {
   const sql = `
-    INSERT INTO order_webhook (order_id, discount_code, ambassador_id, paid, total_price, currency, created_at, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+    INSERT INTO order_webhook (
+      order_id, discount_code, ambassador_id, paid, currency,
+      total_price, original_price, discount_amount, subtotal_price, tax_amount,
+      created_at, updated_at
+    )
+    VALUES (
+      $1, $2, $3, $4, $5,
+      $6, $7, $8, $9, $10,
+      NOW(), NOW()
+    )
     ON CONFLICT (order_id)
     DO UPDATE SET
       discount_code = COALESCE(EXCLUDED.discount_code, order_webhook.discount_code),
-      ambassador_id = EXCLUDED.ambassador_id,
+      ambassador_id = COALESCE(EXCLUDED.ambassador_id, order_webhook.ambassador_id),
+
       paid = CASE
-        WHEN order_webhook.paid = true THEN true
+        WHEN order_webhook.paid = TRUE THEN TRUE
         ELSE EXCLUDED.paid
       END,
-      total_price = EXCLUDED.total_price,
-      currency = EXCLUDED.currency,
+
+      currency = COALESCE(EXCLUDED.currency, order_webhook.currency),
+
+      -- 금액들도 "새 값이 있으면 갱신"
+      total_price      = COALESCE(EXCLUDED.total_price, order_webhook.total_price),
+      original_price   = COALESCE(EXCLUDED.original_price, order_webhook.original_price),
+      discount_amount  = COALESCE(EXCLUDED.discount_amount, order_webhook.discount_amount),
+      subtotal_price   = COALESCE(EXCLUDED.subtotal_price, order_webhook.subtotal_price),
+      tax_amount       = COALESCE(EXCLUDED.tax_amount, order_webhook.tax_amount),
+
       updated_at = NOW()
     RETURNING *;
   `;
 
   const values = [
-    orderId, 
-    discountCode, 
-    ambassadorId, 
-    paid, 
-    totalPrice, 
-    currency
+    orderId,
+    discountCode,
+    ambassadorId,
+    paid,
+    currency,
+    totalPrice,
+    originalPrice,
+    discountAmount,
+    subtotalPrice,
+    taxAmount,
   ];
 
   const res = await pool.query(sql, values);
   return res.rows[0];
 };
 
-
-/**
- * ✅ order_id 로 주문 기록 조회
- */
 export const findOrderById = async (orderId) => {
-  const sql = `
-    SELECT *
-    FROM order_webhook
-    WHERE order_id = $1
-  `;
+  const sql = `SELECT * FROM order_webhook WHERE order_id = $1`;
   const res = await query(sql, [orderId]);
   return res.rows[0] || null;
 };
 
-
-/**
- * ✅ 결제 완료 상태로 업데이트
- */
 export const markPaid = async (orderId, amount, currency) => {
   const sql = `
     UPDATE order_webhook
-    SET 
-      paid = TRUE,
-      total_price = $2,
-      currency = $3,
-      updated_at = NOW()
+    SET paid = TRUE, total_price = $2, currency = $3, updated_at = NOW()
     WHERE order_id = $1
     RETURNING *;
   `;
-
   const res = await pool.query(sql, [orderId, amount, currency]);
   return res.rows[0];
 };
