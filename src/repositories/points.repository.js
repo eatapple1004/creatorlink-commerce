@@ -1,4 +1,5 @@
 import pool from "../config/db.js";
+const db = (client) => client ?? pool;
 
 /**
  * 특정 엠버서더 포인트 레코드 조회
@@ -102,7 +103,7 @@ export const existsEarnByShopifyOrder = async (orderId) => {
     WHERE ap.id = $1
     LIMIT 1
   `;
-  const { rows } = await pool(client).query(sql, [ambassador_id]);
+  const { rows } = await db(client).query(sql, [ambassador_id]);
   // 없으면 기본 0%
   return rows[0]?.commission_rate ?? 0;
 };
