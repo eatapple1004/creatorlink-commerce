@@ -26,6 +26,7 @@ const app = express();
 
 const allowedOrigins = [
     "https://adamthefirstsin.com",   // Shopify 실제 스토어 도메인
+    "https://kr.adamthefirstsin.com",   // Shopify 실제 스토어 도메인
     "https://www.adamthefirstsin.com", // www 버전도 허용
     "http://localhost:8080"          // 로컬 테스트용 (선택사항)
 ];
