@@ -1,1 +1,86 @@
-body { font-family: system-ui; padding: 24px; }
+:root{
+    --bg:#f6f7f8;
+    --text:#111;
+    --muted:#777;
+    --line:#d9d9d9;
+  }
+  
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",
+                Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    color:var(--text);
+    background:var(--bg);
+  }
+  
+  .page{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    padding:48px 18px 28px;
+  }
+  
+  .hero{ display:flex; justify-content:center; }
+  .center{ width:min(920px,100%); text-align:center; padding:32px 18px 10px; }
+  
+  .badge{ font-size:12px; letter-spacing:.08em; color:#222; font-weight:600; margin-bottom:10px; }
+  .sub{ font-size:12px; color:var(--muted); margin-bottom:18px; }
+  
+  .points{ display:flex; justify-content:center; align-items:baseline; gap:10px; margin:8px 0 12px; }
+  .pointsValue{ font-size:44px; font-weight:600; line-height:1; }
+  .pointsUnit{ font-size:20px; color:#222; }
+  
+  .actions{ margin-top:8px; display:flex; flex-direction:column; gap:10px; }
+  .link{ font-size:12px; color:#222; text-decoration:none; }
+  .link:hover{ text-decoration:underline; }
+  
+  .progressWrap{ width:min(920px,100%); margin:24px auto 0; padding:18px 18px 10px; }
+  
+  .tiers{ display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:14px; }
+  .tier{ text-align:center; color:#222; }
+  .tierName{ font-size:12px; font-weight:500; }
+  .tierValue{ font-size:12px; color:var(--muted); margin-top:4px; }
+  .tier.muted{ opacity:.35; }
+  .tier.active .tierName{ font-weight:700; }
+  
+  .bar{ position:relative; height:16px; margin-top:12px; }
+  .barTrack{
+    position:absolute; left:0; right:0; top:6px;
+    height:4px; border-radius:999px; background:var(--line);
+  }
+  .barFill{
+    position:absolute; left:0; top:6px;
+    height:4px; border-radius:999px; background:#333;
+  }
+  .knob{
+    position:absolute; top:0;
+    width:14px; height:14px; border-radius:50%;
+    background:#333; transform:translateX(-50%);
+  }
+  
+  .barHint{ display:flex; justify-content:flex-start; margin-top:6px; color:var(--muted); font-size:11px; }
+  
+  .footnotes{
+    width:min(920px,100%);
+    margin:34px auto 0;
+    display:flex; flex-direction:column; gap:6px;
+    color:#444; font-size:11px; text-align:right;
+  }
+  
+  .footerLinks{
+    width:min(920px,100%);
+    margin:18px auto 0;
+    display:flex; gap:18px;
+    font-size:11px;
+  }
+  .footerLink{ color:#222; text-decoration:none; }
+  .footerLink:hover{ text-decoration:underline; }
+  
+  @media (max-width:640px){
+    .pointsValue{ font-size:38px; }
+    .pointsUnit{ font-size:18px; }
+    .tiers{ grid-template-columns:repeat(3,1fr); }
+    .footnotes{ text-align:left; }
+  }

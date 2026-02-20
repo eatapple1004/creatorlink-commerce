@@ -4,12 +4,73 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Ambassador Dashboard</title>
-    <link rel="stylesheet" href="/iframe/ambassador/static/dashboard.css" />
+    <link rel="stylesheet" href="/iframe/ambassador/ambassador-dashboard/dashboard.css" />
 </head>
 <body>
-    <h1>Ambassador Dashboard (iframe)</h1>
-    <div id="points">0</div>
+    <main class="page">
+        <section class="hero">
+        <div class="center">
+            <div class="badge" id="gradeLabel">BRONZE AMBASSADOR</div>
+            <div class="sub" id="gradeDesc">등급 혜택안내보기</div>
 
-    <script src="/iframe/ambassador/static/dashboard.js"></script>
+            <div class="points">
+            <span class="pointsValue" id="pointsValue">0</span>
+            <span class="pointsUnit">points</span>
+            </div>
+
+            <div class="actions">
+            <a class="link" href="#" id="btnWithdraw">포인트 정산하기</a>
+            <a class="link" href="#" id="btnCustomize">캠페인 커스터마이징</a>
+            </div>
+        </div>
+        </section>
+
+        <section class="progressWrap">
+        <div class="tiers">
+            <div class="tier active" data-tier="bronze">
+            <div class="tierName">Bronze</div>
+            <div class="tierValue">0</div>
+            </div>
+            <div class="tier" data-tier="silver">
+            <div class="tierName">Silver</div>
+            <div class="tierValue">300k</div>
+            </div>
+            <div class="tier muted" data-tier="gold">
+            <div class="tierName">Gold</div>
+            <div class="tierValue">&nbsp;</div>
+            </div>
+            <div class="tier muted" data-tier="platinum">
+            <div class="tierName">Platinum</div>
+            <div class="tierValue">&nbsp;</div>
+            </div>
+            <div class="tier muted" data-tier="diamond">
+            <div class="tierName">Diamond</div>
+            <div class="tierValue">&nbsp;</div>
+            </div>
+        </div>
+
+        <div class="bar">
+            <div class="barTrack"></div>
+            <div class="barFill" id="barFill" style="width:0%;"></div>
+            <div class="knob" id="barKnob" style="left:0%;"></div>
+        </div>
+
+        <div class="barHint">
+            <span class="hintLeft">*현재</span>
+        </div>
+        </section>
+
+        <section class="footnotes">
+        <p>*Point는 1원으로 계산되어 지급됩니다.</p>
+        <p>*등급 갱신에는 60일간의 Point가 적용됩니다.</p>
+        </section>
+
+        <footer class="footerLinks">
+        <a href="#" class="footerLink" id="btnUsage">앰버서더 이용약관</a>
+        <a href="#" class="footerLink" id="btnPrivacy">앰버서더 개인정보 처리방침</a>
+        </footer>
+    </main>
+
+    <script src="/iframe/ambassador/ambassador-dashboard/dashboard.js"></script>
 </body>
 </html>
