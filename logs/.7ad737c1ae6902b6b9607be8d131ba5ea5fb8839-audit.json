@@ -6,19 +6,9 @@
     "auditLog": "/Users/yongjunlee/Documents/Work/Project_List/creatorlink-commerce/logs/.7ad737c1ae6902b6b9607be8d131ba5ea5fb8839-audit.json",
     "files": [
         {
-            "date": 1769670877749,
-            "name": "/Users/yongjunlee/Documents/Work/Project_List/creatorlink-commerce/logs/2026-01-29.log",
-            "hash": "6f7d98702ce04113fc6f2a7d437057e0383f9b50b3d9bbe7242aed058e1602e6"
-        },
-        {
-            "date": 1769828302189,
-            "name": "/Users/yongjunlee/Documents/Work/Project_List/creatorlink-commerce/logs/2026-01-31.log",
-            "hash": "54f2c0a55f51a38a51607e4ae99246511a07cd9ab897c1b238ab4098c8e79d11"
-        },
-        {
-            "date": 1769871712800,
-            "name": "/Users/yongjunlee/Documents/Work/Project_List/creatorlink-commerce/logs/2026-02-01.log",
-            "hash": "2f7f223f26492a1fe81af5d65932a8e3c405af0d24837031e459e987423c4e99"
+            "date": 1771571458007,
+            "name": "/Users/yongjunlee/Documents/Work/Project_List/creatorlink-commerce/logs/2026-02-20.log",
+            "hash": "abfe345fe6aabfb979d6596d4c16a5eb59e35baf068fd53e5f716a7ff24fa19f"
         }
     ],
     "hashType": "sha256"

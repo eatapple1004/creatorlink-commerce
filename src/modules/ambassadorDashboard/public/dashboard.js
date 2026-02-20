@@ -1,0 +1,1 @@
+console.log("[iframe] dashboard loaded");

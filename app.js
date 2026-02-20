@@ -1,6 +1,8 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 
 import authRouter     from "./src/routes/auth.route.js";
 import rewardRouter   from "./src/routes/reward.route.js";
@@ -13,6 +15,9 @@ import shopifyWebhook from "./src/routes/shopifyWebhook.routes.js";
 import airwallex                  from "./src/routes/airwallex.route.js";
 import airwallexBeneficiaryRoutes from "./src/routes/airwallexBeneficiary.routes.js";
 import airwallexTransferRoutes    from './src/routes/airwallexTransfer.routes.js';
+
+import ambassadorDashboardRoutes from "./src/modules/ambassadorDashboard/ambassadorDashboard.routes.js";
+
 
 import pool from "./src/config/db.js";   // ✅ import로 변경
 
@@ -38,6 +43,14 @@ app.use(cors({
     allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+app.use(
+    "/iframe/ambassador/static",
+    express.static(path.join(__dirname, "src/modules/ambassadorDashboard/public"))
+);
+
 app.use("/api/shopify/webhook",  express.raw({ type: "*/*" }));
 
 app.use(express.json());
@@ -52,6 +65,8 @@ app.use("/api/shopify/webhook", shopifyWebhook);
 app.use("/api/airwallex", airwallex);
 app.use("/api/airwallex", airwallexBeneficiaryRoutes);
 app.use('/api/airwallex', airwallexTransferRoutes);
+
+app.use("/iframe/ambassador", ambassadorDashboardRoutes);
 
 app.listen(process.env.PORT || 8080, () => {
     console.log(`✅ Server running on port ${process.env.PORT}`);
