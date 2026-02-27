@@ -10,7 +10,7 @@ export const getAmbassadorDashboardData = async (ambassadorId) => {
       apt.current_points,
       apt.total_earned,
       apt.total_withdrawn,
-      UPPER(g.name) AS grade_name,
+      UPPER(g.code) AS grade_name,
       g.commission_rate
     FROM ambassador_profile ap
     JOIN ambassador_points apt ON apt.ambassador_id = ap.id
