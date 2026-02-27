@@ -59,17 +59,23 @@ function getToken() {
   // 1순위: URL ?token= 파라미터 (Shopify 로그인 후 리다이렉트 시 전달)
   const q = new URLSearchParams(location.search);
   const urlToken = q.get("token");
+  console.log("[DEBUG] URL token:", urlToken ? urlToken.slice(0, 20) + "..." : "없음");
+
   if (urlToken) {
-    localStorage.setItem("ambassador_token", urlToken); // 이후 새로고침용으로 저장
-    history.replaceState(null, "", location.pathname);  // URL에서 토큰 제거
+    localStorage.setItem("ambassador_token", urlToken);
+    history.replaceState(null, "", location.pathname);
     return urlToken;
   }
+
   // 2순위: localStorage (새로고침 시)
-  return localStorage.getItem("ambassador_token");
+  const lsToken = localStorage.getItem("ambassador_token");
+  console.log("[DEBUG] localStorage token:", lsToken ? lsToken.slice(0, 20) + "..." : "없음");
+  return lsToken;
 }
 
 async function loadDashboard() {
   const token = getToken();
+  console.log("[DEBUG] 최종 사용 token:", token ? "있음 (" + token.slice(0, 20) + "...)" : "없음");
 
   if (!token) {
     showAuthError("로그인이 필요합니다");
@@ -77,10 +83,12 @@ async function loadDashboard() {
   }
 
   try {
+    console.log("[DEBUG] API 호출 시작");
     const res = await fetch("https://api.adamthefirstsin.com/iframe/ambassador/api/me", {
       headers: { Authorization: `Bearer ${token}` },
       credentials: "include",
     });
+    console.log("[DEBUG] API 응답 status:", res.status);
 
     if (res.status === 401 || res.status === 403) {
       localStorage.removeItem("ambassador_token");
