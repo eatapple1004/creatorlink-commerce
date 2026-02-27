@@ -5,5 +5,6 @@ const router = express.Router();
 
 router.post("/order-create", shopifyWebhookController.handleOrderCreate);
 router.post("/order-paid", shopifyWebhookController.handleOrderPaid);
+router.post("/refund", shopifyWebhookController.handleRefund);
 
 export default router;

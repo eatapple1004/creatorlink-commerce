@@ -4,6 +4,16 @@ import * as orderWebhookRepo from "../repositories/orderWebhook.repository.js";
 import * as pointsService from "./points.service.js";
 import logger from "../config/logger.js";
 
+/**
+ * 환불 payload에서 총 환불금액 합산
+ * - transactions 배열에서 kind='refund'인 항목만 합산
+ */
+function extractRefundAmount(refund) {
+  return (refund.transactions || [])
+    .filter((t) => t.kind === "refund")
+    .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+}
+
 const n = (v) => (v === null || v === undefined ? null : Number(v));
 
 /**
@@ -165,4 +175,58 @@ export const processOrderPaid = async (order) => {
   }
 
   logger.info(`🟩 [Shopify] 결제 완료 처리 완료 → order_id=${orderId}`);
+};
+
+/**
+ * refunds/create webhook 처리
+ *
+ * 역할:
+ * - 환불 발생 시 해당 주문의 ambassador 포인트 차감
+ *
+ * 멱등 보장:
+ * - refund_id 기준으로 중복 처리 방지 (pointsService 내부)
+ *
+ * 스킵 조건:
+ * - order_webhook에 해당 order_id 없음
+ * - ambassador_id 없음
+ * - 환불 트랜잭션 금액이 0 이하
+ */
+export const processRefund = async (refund) => {
+  const refundId = refund.id;
+  const orderId = refund.order_id;
+
+  if (!orderId) {
+    logger.warn(`🟨 [Shopify] refunds/create: order_id 없음 → skip (refund_id=${refundId})`);
+    return;
+  }
+
+  // 주문 정보 조회 → ambassador_id 확인
+  const order = await orderWebhookRepo.findOrderById(orderId);
+  if (!order || !order.ambassador_id) {
+    logger.info(`🟨 [Shopify] refunds/create: ambassador 없음 → skip (order_id=${orderId})`);
+    return;
+  }
+
+  // 환불 금액 계산
+  const refundAmount = extractRefundAmount(refund);
+  if (refundAmount <= 0) {
+    logger.warn(`🟨 [Shopify] refunds/create: 환불금액 0 → skip (refund_id=${refundId})`);
+    return;
+  }
+
+  const result = await pointsService.deductPointsByShopifyRefundService({
+    ambassador_id: order.ambassador_id,
+    refund_id: refundId,
+    order_id: orderId,
+    refund_amount: refundAmount,
+    description: `Shopify 환불(주문 ${orderId}) 포인트 차감`,
+  });
+
+  if (result?.skipped) {
+    logger.info(`🟨 [Shopify] 포인트 차감 스킵(이미 처리됨) → refund_id=${refundId}`);
+  } else {
+    logger.info(`🟥 [Shopify] 포인트 차감 완료 → refund_id=${refundId}, 차감=${result.points}`);
+  }
+
+  logger.info(`🟥 [Shopify] 환불 처리 완료 → order_id=${orderId}, refund_id=${refundId}`);
 };

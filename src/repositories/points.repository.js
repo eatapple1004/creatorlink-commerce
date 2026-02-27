@@ -90,6 +90,19 @@ export const existsEarnByShopifyOrder = async (orderId) => {
   return rows.length > 0;
 };
 
+export const existsRefundByShopifyRefund = async (refundId, client = null) => {
+  const sql = `
+    SELECT 1
+    FROM transaction_log
+    WHERE type = 'refund'
+      AND reference_type = 'SHOPIFY_REFUND'
+      AND reference_id = $1
+    LIMIT 1
+  `;
+  const { rows } = await db(client).query(sql, [refundId]);
+  return rows.length > 0;
+};
+
 
 /**
  * ✅ ambassador_id로 commission_rate(%) 조회

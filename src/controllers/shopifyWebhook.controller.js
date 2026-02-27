@@ -48,6 +48,31 @@ export const handleOrderCreate = async (req, res) => {
 };
 
 /**
+ * 🟥 환불 Webhook (refunds/create)
+ */
+export const handleRefund = async (req, res) => {
+    try {
+        logger.info("📥 [Shopify] refunds/create webhook received.");
+
+        if (!verifyHmac(req)) {
+            logger.warn("❌ [Shopify] HMAC verification failed (refunds/create)");
+            return res.status(401).send("invalid hmac");
+        }
+
+        const data = JSON.parse(req.body.toString());
+        logger.info(`🟥 Refund → refund_id=${data.id}, order_id=${data.order_id}`);
+        logger.info(data);
+
+        await shopifyWebhookService.processRefund(data);
+
+        res.status(200).send("ok");
+    } catch (err) {
+        logger.error("❌ [Shopify] refunds/create error: " + err.stack);
+        res.status(500).send("server error");
+    }
+};
+
+/**
  * 🟩 결제 완료 Webhook (orders/paid)
  */
 export const handleOrderPaid = async (req, res) => {

@@ -4,6 +4,7 @@ import {
     insertTransaction,
     findAmbassadorByReferralCode,
     existsEarnByShopifyOrder,
+    existsRefundByShopifyRefund,
     getCommissionRateByAmbassadorId
 } from "../repositories/points.repository.js";
 import { transaction } from "../config/dbClient.js";
@@ -156,6 +157,79 @@ export const withdrawPointsService = async ({ ambassador_id, amount, description
             skipped: false,
             record: newRecord,
             paid,
+            commission_rate: commissionRate,
+            points,
+        };
+    });
+};
+
+
+/**
+ * Shopify 환불 시 포인트 차감 서비스
+ *
+ * - refund_id 기준 멱등 보장
+ * - 환불금액 × commission_rate로 차감 포인트 계산
+ * - current_points, total_earned 감소
+ */
+export const deductPointsByShopifyRefundService = async ({
+    ambassador_id,
+    refund_id,
+    order_id,
+    refund_amount,
+    description,
+}) => {
+    return transaction(async (client) => {
+        // 0) 멱등 체크
+        const already = await existsRefundByShopifyRefund(refund_id, client);
+        if (already) {
+            const record = await findPointsByAmbassador(ambassador_id, client);
+            return { skipped: true, record };
+        }
+
+        // 1) commission_rate 조회
+        const commissionRate = Number(
+            await getCommissionRateByAmbassadorId(ambassador_id, client)
+        );
+
+        // 2) 환불금액 → 차감 포인트 계산
+        const refunded = Number(refund_amount);
+        if (!Number.isFinite(refunded) || refunded <= 0) throw new Error("INVALID_REFUND_AMOUNT");
+
+        const points = Math.round(refunded * (commissionRate / 100) * 100) / 100;
+
+        // 3) 현재 포인트 조회
+        const record = await findPointsByAmbassador(ambassador_id, client);
+        if (!record) throw new Error("POINTS_RECORD_NOT_FOUND");
+
+        const current = parseFloat(record.current_points);
+        const earned = parseFloat(record.total_earned);
+        const withdrawn = parseFloat(record.total_withdrawn);
+
+        // 4) 차감 계산 (음수 허용 - 이미 출금한 케이스 대비)
+        const updated = {
+            current_points: current - points,
+            total_earned: earned - points,
+            total_withdrawn: withdrawn,
+        };
+
+        // 5) 저장
+        const newRecord = await savePoints(ambassador_id, updated, client);
+
+        // 6) 거래 로그
+        await insertTransaction({
+            ambassador_id,
+            type: "refund",
+            amount: -points,
+            balance_after: newRecord.current_points,
+            reference_type: "SHOPIFY_REFUND",
+            reference_id: refund_id,
+            description: description || `Shopify 환불(주문 ${order_id}) 차감 (${commissionRate}%)`,
+        }, client);
+
+        return {
+            skipped: false,
+            record: newRecord,
+            refunded,
             commission_rate: commissionRate,
             points,
         };
