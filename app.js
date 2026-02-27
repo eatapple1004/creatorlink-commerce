@@ -25,10 +25,11 @@ dotenv.config();
 const app = express();
 
 const allowedOrigins = [
-    "https://adamthefirstsin.com",   // Shopify 실제 스토어 도메인
-    "https://kr.adamthefirstsin.com",   // Shopify 실제 스토어 도메인
-    "https://www.adamthefirstsin.com", // www 버전도 허용
-    "http://localhost:8080"          // 로컬 테스트용 (선택사항)
+    "https://adamthefirstsin.com",      // Shopify 실제 스토어 도메인
+    "https://kr.adamthefirstsin.com",   // Shopify 한국 스토어 도메인
+    "https://www.adamthefirstsin.com",  // www 버전
+    "https://api.adamthefirstsin.com",  // API 서버 자체 도메인 (대시보드 iframe)
+    "http://localhost:8080"             // 로컬 테스트용
 ];
 
 app.use(cors({

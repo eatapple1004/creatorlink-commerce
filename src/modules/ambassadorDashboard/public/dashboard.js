@@ -62,23 +62,29 @@ function getToken() {
   return localStorage.getItem("ambassador_token");
 }
 
+function showAuthError(msg) {
+  const el = document.getElementById("pointsValue");
+  if (el) el.textContent = "-";
+  const grade = document.getElementById("gradeLabel");
+  if (grade) grade.textContent = msg;
+}
+
 async function loadDashboard() {
   const token = getToken();
 
   if (!token) {
-    // 토큰 없으면 로그인 페이지로
-    location.href = "/iframe/ambassador/login";
+    showAuthError("로그인이 필요합니다");
     return;
   }
 
   try {
-    const res = await fetch("/iframe/ambassador/api/me", {
+    const res = await fetch("https://api.adamthefirstsin.com/iframe/ambassador/api/me", {
       headers: { Authorization: `Bearer ${token}` },
     });
 
     if (res.status === 401 || res.status === 403) {
       localStorage.removeItem("ambassador_token");
-      location.href = "/iframe/ambassador/login";
+      showAuthError("세션이 만료되었습니다. 다시 로그인해주세요.");
       return;
     }
 
@@ -92,6 +98,7 @@ async function loadDashboard() {
     render();
   } catch (err) {
     console.error("대시보드 로드 실패:", err);
+    showAuthError("데이터를 불러오지 못했습니다.");
   }
 }
 
