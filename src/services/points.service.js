@@ -5,8 +5,19 @@ import {
     findAmbassadorByReferralCode,
     existsEarnByShopifyOrder,
     existsRefundByShopifyRefund,
-    getCommissionRateByAmbassadorId
+    getCommissionRateByAmbassadorId,
+    getAmbassadorGradeInfo,
+    getItemCommissionByCode,
 } from "../repositories/points.repository.js";
+
+// 등급 코드 → item_commission 컬럼명 매핑
+const GRADE_COMMISSION_COL = {
+  BRONZE:   "bronze_commission",
+  SILVER:   "silver_commission",
+  GOLD:     "gold_commission",
+  PLATINUM: "platinum_commission",
+  DIAMOND:  "diamond_commission",
+};
 import { transaction } from "../config/dbClient.js";
   
  /**
@@ -96,10 +107,11 @@ export const withdrawPointsService = async ({ ambassador_id, amount, description
 
 
 
-  export const addPointsByShopifyOrderService = async ({
+export const addPointsByShopifyOrderService = async ({
     ambassador_id,
     order_id,
-    amount,        // ✅ 여기 amount는 "결제금액"
+    lineItems = [],  // [{ sku, price, quantity }]
+    amount,          // lineItems 없을 때 fallback용 총 결제금액
     description,
 }) => {
     return transaction(async (client) => {
@@ -109,39 +121,61 @@ export const withdrawPointsService = async ({ ambassador_id, amount, description
             const record = await findPointsByAmbassador(ambassador_id, client);
             return { skipped: true, record };
         }
-    
-        // 1) 등급 commission_rate(%) 조회
-        const commissionRate = Number(
-            await getCommissionRateByAmbassadorId(ambassador_id, client)
-        ); // ex) 5.00
-    
-        // 2) 결제금액 -> 적립 포인트 계산
-        const paid = Number(amount);
-        if (!Number.isFinite(paid) || paid <= 0) throw new Error("INVALID_AMOUNT");
-    
-        // 포인트 = 결제금액 * (n/100)
-        const points = Math.round(paid * (commissionRate / 100) * 100) / 100; // 소수 2자리 반올림
-        // 필요하면 KRW는 정수 처리로 바꾸세요:
-        // const points = Math.floor(paid * (commissionRate / 100));
-    
+
+        // 1) 앰버서더 등급 정보 조회 (grade_code + 기본 commission_rate)
+        const gradeInfo = await getAmbassadorGradeInfo(ambassador_id, client);
+        const gradeCode = String(gradeInfo?.grade_code ?? "BRONZE").toUpperCase();
+        const fallbackRate = Number(gradeInfo?.commission_rate ?? 0);
+        const gradeCol = GRADE_COMMISSION_COL[gradeCode];
+
+        // 2) 아이템별 포인트 계산
+        let points = 0;
+
+        if (lineItems.length > 0) {
+            for (const item of lineItems) {
+                const sku      = item.sku;
+                const unitPrice = Number(item.price);
+                const qty       = Number(item.quantity);
+
+                if (!sku || !Number.isFinite(unitPrice) || !Number.isFinite(qty) || qty <= 0) continue;
+
+                // item_commission 테이블에서 아이템별 등급 커미션 조회
+                const itemCommission = await getItemCommissionByCode(sku, client);
+
+                // 아이템 테이블에 있으면 등급별 rate 사용, 없으면 ambassador_grade rate로 fallback
+                const rate = (itemCommission && gradeCol)
+                    ? Number(itemCommission[gradeCol])
+                    : fallbackRate;
+
+                points += Math.round(unitPrice * qty * (rate / 100) * 100) / 100;
+            }
+        } else {
+            // lineItems 없을 때 기존 방식 (총 결제금액 × 기본 rate)
+            const paid = Number(amount);
+            if (!Number.isFinite(paid) || paid <= 0) throw new Error("INVALID_AMOUNT");
+            points = Math.round(paid * (fallbackRate / 100) * 100) / 100;
+        }
+
+        if (points <= 0) throw new Error("INVALID_AMOUNT");
+
         // 3) 현재 포인트 조회
         const record = await findPointsByAmbassador(ambassador_id, client);
         if (!record) throw new Error("POINTS_RECORD_NOT_FOUND");
-    
-        const current = parseFloat(record.current_points);
-        const earned = parseFloat(record.total_earned);
+
+        const current   = parseFloat(record.current_points);
+        const earned    = parseFloat(record.total_earned);
         const withdrawn = parseFloat(record.total_withdrawn);
-    
+
         // 4) 업데이트
         const updated = {
-            current_points: current + points,
-            total_earned: earned + points,
+            current_points:  current + points,
+            total_earned:    earned + points,
             total_withdrawn: withdrawn,
         };
-    
+
         // 5) 저장
         const newRecord = await savePoints(ambassador_id, updated, client);
-    
+
         // 6) 거래 로그
         await insertTransaction({
             ambassador_id,
@@ -150,14 +184,13 @@ export const withdrawPointsService = async ({ ambassador_id, amount, description
             balance_after: newRecord.current_points,
             reference_type: "SHOPIFY_ORDER",
             reference_id: order_id,
-            description: description || `Shopify 주문(${order_id}) 적립 (${commissionRate}%)`,
+            description: description || `Shopify 주문(${order_id}) 적립 [${gradeCode}]`,
         }, client);
-    
+
         return {
             skipped: false,
             record: newRecord,
-            paid,
-            commission_rate: commissionRate,
+            grade_code: gradeCode,
             points,
         };
     });

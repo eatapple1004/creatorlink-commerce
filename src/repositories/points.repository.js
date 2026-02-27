@@ -108,6 +108,30 @@ export const existsRefundByShopifyRefund = async (refundId, client = null) => {
  * ✅ ambassador_id로 commission_rate(%) 조회
  * - commission_rate: numeric(5,2) ex) 5.00
  */
+/**
+ * ambassador_id로 등급 코드 + 기본 commission_rate 조회
+ */
+export const getAmbassadorGradeInfo = async (ambassador_id, client = null) => {
+  const sql = `
+    SELECT g.code AS grade_code, g.commission_rate
+    FROM ambassador_profile ap
+    JOIN ambassador_grade g ON g.id = ap.grade_id
+    WHERE ap.id = $1
+    LIMIT 1
+  `;
+  const { rows } = await db(client).query(sql, [ambassador_id]);
+  return rows[0] || { grade_code: "BRONZE", commission_rate: 0 };
+};
+
+/**
+ * item_code로 아이템별 등급 커미션 조회
+ */
+export const getItemCommissionByCode = async (itemCode, client = null) => {
+  const sql = `SELECT * FROM item_commission WHERE item_code = $1 LIMIT 1`;
+  const { rows } = await db(client).query(sql, [itemCode]);
+  return rows[0] || null;
+};
+
  export const getCommissionRateByAmbassadorId = async (ambassador_id, client = null) => {
   const sql = `
     SELECT g.commission_rate

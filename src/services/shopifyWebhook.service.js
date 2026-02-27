@@ -160,10 +160,18 @@ export const processOrderPaid = async (order) => {
 
   // ambassador 존재 시 포인트 적립 시도
   if (saved?.ambassador_id && totalPrice !== null) {
+    // line_items에서 sku, price, quantity 추출
+    const lineItems = (order.line_items || []).map((item) => ({
+      sku:      item.sku,
+      price:    item.price,
+      quantity: item.quantity,
+    }));
+
     const result = await pointsService.addPointsByShopifyOrderService({
       ambassador_id: saved.ambassador_id,
       order_id: orderId,
-      amount: totalPrice,
+      lineItems,
+      amount: totalPrice, // lineItems 없을 때 fallback
       description: `Shopify 주문(${orderId}) 결제 적립`,
     });
 
