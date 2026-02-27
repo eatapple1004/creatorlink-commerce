@@ -47,6 +47,16 @@ export const loginUser = async (req, res) => {
 
     const { token, user } = await loginUserService({ email, password });
 
+    // 서브도메인 간 공유 쿠키 설정 (.adamthefirstsin.com)
+    res.cookie("ambassador_token", token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      domain: ".adamthefirstsin.com",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7일
+      path: "/",
+    });
+
     res.status(200).json({
       message: "로그인 성공",
       token,

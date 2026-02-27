@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -53,6 +54,7 @@ app.use(
     express.static(path.join(__dirname, "src/modules/ambassadorDashboard/public"))
 );
 
+app.use(cookieParser());
 app.use("/api/shopify/webhook",  express.raw({ type: "*/*" }));
 
 app.use(express.json());

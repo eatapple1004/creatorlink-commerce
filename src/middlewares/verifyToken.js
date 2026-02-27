@@ -6,23 +6,22 @@ dotenv.config();
 
 export const verifyToken = (req, res, next) => {
   try {
+    // 1️⃣ 토큰 추출: Authorization 헤더 → 쿠키 순으로 확인
     const authHeader = req.headers.authorization;
+    const token =
+      (authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : null) ||
+      req.cookies?.ambassador_token;
 
-    // 1️⃣ Authorization 헤더 존재 확인
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    if (!token) {
       return res.status(401).json({ message: "인증 토큰이 없습니다." });
     }
 
-    // 2️⃣ 토큰 추출
-    const token = authHeader.split(" ")[1];
-
-    // 3️⃣ 토큰 검증
+    // 2️⃣ 토큰 검증
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // 4️⃣ 검증 성공 시 사용자 정보 요청 객체에 저장
-    req.user = decoded; // { id, email, role }
+    // 3️⃣ 검증 성공 시 사용자 정보 요청 객체에 저장
+    req.user = decoded;
 
-    // 5️⃣ 다음 미들웨어로 이동
     next();
   } catch (err) {
     console.error("❌ JWT 인증 실패:", err);

@@ -48,20 +48,6 @@ function render() {
   document.getElementById("barKnob").style.left = `${percent}%`;
 }
 
-function getToken() {
-  // 1순위: URL 쿼리 파라미터 (로그인 후 리다이렉트 시 전달)
-  const q = new URLSearchParams(location.search);
-  const tokenFromQuery = q.get("token");
-  if (tokenFromQuery) {
-    localStorage.setItem("ambassador_token", tokenFromQuery);
-    // URL에서 토큰 제거 (보안)
-    history.replaceState(null, "", location.pathname);
-    return tokenFromQuery;
-  }
-  // 2순위: localStorage
-  return localStorage.getItem("ambassador_token");
-}
-
 function showAuthError(msg) {
   const el = document.getElementById("pointsValue");
   if (el) el.textContent = "-";
@@ -70,20 +56,24 @@ function showAuthError(msg) {
 }
 
 async function loadDashboard() {
-  const token = getToken();
-
-  if (!token) {
-    showAuthError("로그인이 필요합니다");
-    return;
+  // URL ?token= 파라미터가 있으면 Authorization 헤더로 사용 (fallback)
+  const q = new URLSearchParams(location.search);
+  const urlToken = q.get("token");
+  if (urlToken) {
+    history.replaceState(null, "", location.pathname);
   }
+
+  const headers = urlToken
+    ? { Authorization: `Bearer ${urlToken}` }
+    : {};
 
   try {
     const res = await fetch("https://api.adamthefirstsin.com/iframe/ambassador/api/me", {
-      headers: { Authorization: `Bearer ${token}` },
+      headers,
+      credentials: "include", // 쿠키 자동 전송
     });
 
     if (res.status === 401 || res.status === 403) {
-      localStorage.removeItem("ambassador_token");
       showAuthError("세션이 만료되었습니다. 다시 로그인해주세요.");
       return;
     }
