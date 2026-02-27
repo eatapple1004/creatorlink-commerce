@@ -142,11 +142,10 @@ export const addPointsByShopifyOrderService = async ({
                 // item_commission 테이블에서 아이템별 등급 커미션 조회
                 const itemCommission = await getItemCommissionByCode(sku, client);
 
-                // 총 커미션 = 등급 기본 비율 + 아이템별 등급 비율
-                const itemRate = (itemCommission && gradeCol)
+                // 아이템 테이블에 등급별 rate만 사용 (없으면 0 = 적립 없음)
+                const rate = (itemCommission && gradeCol)
                     ? Number(itemCommission[gradeCol])
                     : 0;
-                const rate = fallbackRate + itemRate;
 
                 points += Math.round(unitPrice * qty * (rate / 100) * 100) / 100;
             }
