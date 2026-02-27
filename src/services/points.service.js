@@ -133,16 +133,10 @@ export const addPointsByShopifyOrderService = async ({
 
         if (lineItems.length > 0) {
             for (const item of lineItems) {
-                const sku           = item.sku;
-                const unitPrice     = Number(item.price);
-                const qty           = Number(item.quantity);
-                const totalDiscount = Number(item.total_discount ?? 0);
+                const sku        = item.sku;
+                const paidAmount = Number(item.paidAmount); // 실결제금액 (할인 적용 후)
 
-                if (!sku || !Number.isFinite(unitPrice) || !Number.isFinite(qty) || qty <= 0) continue;
-
-                // 실결제금액 = (단가 × 수량) - 할인금액
-                const paidAmount = unitPrice * qty - totalDiscount;
-                if (paidAmount <= 0) continue;
+                if (!sku || !Number.isFinite(paidAmount) || paidAmount <= 0) continue;
 
                 // item_commission 테이블에서 아이템별 등급 커미션 조회
                 const itemCommission = await getItemCommissionByCode(sku, client);

@@ -160,13 +160,19 @@ export const processOrderPaid = async (order) => {
 
   // ambassador 존재 시 포인트 적립 시도
   if (saved?.ambassador_id && totalPrice !== null) {
-    // line_items에서 sku, price, quantity, total_discount 추출
-    const lineItems = (order.line_items || []).map((item) => ({
-      sku:            item.sku,
-      price:          item.price,
-      quantity:       item.quantity,
-      total_discount: item.total_discount ?? "0",
-    }));
+    // line_items에서 sku + 실결제금액 계산
+    // discount_allocations 합산으로 정확한 할인금액 반영
+    const lineItems = (order.line_items || []).map((item) => {
+      const grossAmount      = Number(item.price) * Number(item.quantity);
+      const discountAmount   = (item.discount_allocations || [])
+        .reduce((sum, d) => sum + Number(d.amount || 0), 0);
+      const paidAmount = Math.max(0, grossAmount - discountAmount);
+
+      return {
+        sku:        item.sku,
+        paidAmount, // 실결제금액 (할인 적용 후)
+      };
+    });
 
     const result = await pointsService.addPointsByShopifyOrderService({
       ambassador_id: saved.ambassador_id,
