@@ -90,6 +90,21 @@ export const existsEarnByShopifyOrder = async (orderId) => {
   return rows.length > 0;
 };
 
+/**
+ * order_id 기준으로 적립된 포인트 총합 조회
+ */
+export const getEarnedPointsByOrderId = async (orderId, client = null) => {
+  const sql = `
+    SELECT COALESCE(SUM(amount), 0) AS total_earned
+    FROM transaction_log
+    WHERE type = 'earn'
+      AND reference_type = 'SHOPIFY_ORDER'
+      AND reference_id = $1
+  `;
+  const { rows } = await db(client).query(sql, [orderId]);
+  return Number(rows[0]?.total_earned ?? 0);
+};
+
 export const existsRefundByShopifyRefund = async (refundId, client = null) => {
   const sql = `
     SELECT 1

@@ -230,10 +230,11 @@ export const processRefund = async (refund) => {
   }
 
   const result = await pointsService.deductPointsByShopifyRefundService({
-    ambassador_id: order.ambassador_id,
-    refund_id: refundId,
-    order_id: orderId,
-    refund_amount: refundAmount,
+    ambassador_id:  order.ambassador_id,
+    refund_id:      refundId,
+    order_id:       orderId,
+    refund_amount:  refundAmount,
+    original_total: order.total_price, // 원래 주문 금액 (비례 계산용)
     description: `Shopify 환불(주문 ${orderId}) 포인트 차감`,
   });
 

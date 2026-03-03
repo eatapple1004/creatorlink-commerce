@@ -8,6 +8,7 @@ import {
     getCommissionRateByAmbassadorId,
     getAmbassadorGradeInfo,
     getItemCommissionByCode,
+    getEarnedPointsByOrderId,
 } from "../repositories/points.repository.js";
 
 // 등급 코드 → item_commission 컬럼명 매핑
@@ -200,14 +201,16 @@ export const addPointsByShopifyOrderService = async ({
  * Shopify 환불 시 포인트 차감 서비스
  *
  * - refund_id 기준 멱등 보장
- * - 환불금액 × commission_rate로 차감 포인트 계산
- * - current_points, total_earned 감소
+ * - 원래 주문에서 적립된 포인트를 transaction_log에서 조회
+ * - 전체 환불 → 적립 포인트 전액 차감
+ * - 부분 환불 → 적립 포인트 × (환불금액 / 원래주문금액) 비례 차감
  */
 export const deductPointsByShopifyRefundService = async ({
     ambassador_id,
     refund_id,
     order_id,
     refund_amount,
+    original_total, // 원래 주문 금액 (비례 계산용)
     description,
 }) => {
     return transaction(async (client) => {
@@ -218,29 +221,39 @@ export const deductPointsByShopifyRefundService = async ({
             return { skipped: true, record };
         }
 
-        // 1) commission_rate 조회
-        const commissionRate = Number(
-            await getCommissionRateByAmbassadorId(ambassador_id, client)
-        );
+        // 1) 원래 주문에서 적립된 포인트 조회
+        const earnedPoints = await getEarnedPointsByOrderId(order_id, client);
+        if (earnedPoints <= 0) {
+            // 이 주문에 포인트 적립 이력 없음 → 차감 없음
+            return { skipped: true, reason: "NO_EARN_FOUND" };
+        }
 
-        // 2) 환불금액 → 차감 포인트 계산
-        const refunded = Number(refund_amount);
-        if (!Number.isFinite(refunded) || refunded <= 0) throw new Error("INVALID_REFUND_AMOUNT");
+        // 2) 차감 포인트 계산
+        const refunded  = Number(refund_amount);
+        const origTotal = Number(original_total ?? 0);
 
-        const points = Math.round(refunded * (commissionRate / 100) * 100) / 100;
+        let pointsToDeduct;
+        if (origTotal <= 0 || refunded >= origTotal) {
+            // 전체 환불 → 적립 포인트 전액 차감
+            pointsToDeduct = earnedPoints;
+        } else {
+            // 부분 환불 → 비례 차감
+            const ratio = refunded / origTotal;
+            pointsToDeduct = Math.round(earnedPoints * ratio * 100) / 100;
+        }
 
         // 3) 현재 포인트 조회
         const record = await findPointsByAmbassador(ambassador_id, client);
         if (!record) throw new Error("POINTS_RECORD_NOT_FOUND");
 
-        const current = parseFloat(record.current_points);
-        const earned = parseFloat(record.total_earned);
+        const current   = parseFloat(record.current_points);
+        const earned    = parseFloat(record.total_earned);
         const withdrawn = parseFloat(record.total_withdrawn);
 
-        // 4) 차감 계산 (음수 허용 - 이미 출금한 케이스 대비)
+        // 4) 차감
         const updated = {
-            current_points: current - points,
-            total_earned: earned - points,
+            current_points:  current - pointsToDeduct,
+            total_earned:    earned  - pointsToDeduct,
             total_withdrawn: withdrawn,
         };
 
@@ -251,19 +264,18 @@ export const deductPointsByShopifyRefundService = async ({
         await insertTransaction({
             ambassador_id,
             type: "refund",
-            amount: -points,
+            amount: -pointsToDeduct,
             balance_after: newRecord.current_points,
             reference_type: "SHOPIFY_REFUND",
             reference_id: refund_id,
-            description: description || `Shopify 환불(주문 ${order_id}) 차감 (${commissionRate}%)`,
+            description: description || `Shopify 환불(주문 ${order_id}) 포인트 차감`,
         }, client);
 
         return {
             skipped: false,
             record: newRecord,
-            refunded,
-            commission_rate: commissionRate,
-            points,
+            earned_points:   earnedPoints,
+            points_deducted: pointsToDeduct,
         };
     });
 };
