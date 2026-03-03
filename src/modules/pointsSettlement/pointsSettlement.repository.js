@@ -15,6 +15,7 @@ export const getSettlementSummary = async (ambassadorId) => {
         FROM transaction_log
         WHERE ambassador_id = $1
           AND type = 'earn'
+          AND reference_type != 'AIRWALLEX_REVERSAL'
           AND created_at >= NOW() - INTERVAL '1 month'
       ), 0) AS locked_points
     FROM ambassador_points ap
