@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>정산 | Ambassador</title>
+  <link rel="stylesheet" href="/iframe/ambassador/points-settlement/settlement.css" />
+</head>
+<body>
+  <main class="page">
+    <h1 class="pageTitle">정산</h1>
+
+    <div class="grid">
+      <!-- 1) 정산 가능 금액 -->
+      <section class="card">
+        <p class="cardLabel">정산 가능 금액<br><span class="hint">(매월/정산내역)</span></p>
+        <div class="rateInfo">
+          <span>*KRW = 1point</span>
+          <span>1USD = 1,400point</span>
+        </div>
+
+        <p class="pointsGroupLabel">정산 포인트</p>
+        <ul class="pointsList">
+          <li>
+            <span class="pLabel">실시간 포인트</span>
+            <span class="pValue" id="currentPoints">-</span>
+          </li>
+          <li>
+            <span class="pLabel">정산 확정 포인트(금액)</span>
+            <span class="pValue" id="withdrawablePoints">-</span>
+          </li>
+          <li>
+            <span class="pLabel">정산 대기 포인트</span>
+            <span class="pValue" id="lockedPoints">-</span>
+          </li>
+        </ul>
+
+        <button class="btnSettle" id="btnSettle">정산 요청</button>
+      </section>
+
+      <!-- 2) 정산계좌 -->
+      <section class="card">
+        <p class="cardLabel">정산계좌</p>
+        <div class="bankInfo" id="bankInfo">
+          <p class="bankName" id="bankAccountName">-</p>
+          <p class="bankInstitute" id="bankInstitute">-</p>
+          <p class="bankNumber" id="bankNumber">-</p>
+        </div>
+        <a class="changeAccountLink disabled" href="#" id="btnChangeAccount">정산 계좌 변경</a>
+      </section>
+
+      <!-- 3) 정산 대기 금액 -->
+      <section class="card">
+        <p class="cardLabel">정산 대기 금액</p>
+        <div id="pendingList">
+          <p class="emptyMsg">대기 중인 정산 내역이 없습니다.</p>
+        </div>
+      </section>
+
+      <!-- 4) 정산 요청 내역 -->
+      <section class="card">
+        <p class="cardLabel">정산 요청 내역</p>
+        <table class="historyTable">
+          <thead>
+            <tr>
+              <th>요청일</th>
+              <th>정산금액</th>
+              <th>상태</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="historyBody">
+            <tr>
+              <td colspan="4" class="emptyMsg">요청 내역이 없습니다.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </div>
+
+    <footer class="pageFooter">
+      <p>앰버서더 정산관련 문의는 아래 이메일로 문의해주세요</p>
+      <a href="mailto:adamcompanyofficial@gmail.com">adamcompanyofficial@gmail.com</a>
+    </footer>
+  </main>
+
+  <!-- 정산 요청 모달 -->
+  <div class="modalOverlay hidden" id="settleModal">
+    <div class="modal">
+      <h2 class="modalTitle">정산 요청</h2>
+      <p class="modalDesc">출금 가능 포인트: <strong id="modalWithdrawable">0</strong>pts</p>
+      <div class="modalField">
+        <label>정산 금액 (포인트)</label>
+        <input type="number" id="settleAmount" placeholder="0" min="1" />
+      </div>
+      <p class="modalNote">* 적립 후 1개월이 지난 포인트만 출금 가능합니다.</p>
+      <div class="modalActions">
+        <button class="btnCancel" id="btnModalCancel">취소</button>
+        <button class="btnConfirm" id="btnModalConfirm">확인</button>
+      </div>
+      <p class="modalError hidden" id="modalError"></p>
+    </div>
+  </div>
+
+  <script src="/iframe/ambassador/points-settlement/settlement.js"></script>
+</body>
+</html>

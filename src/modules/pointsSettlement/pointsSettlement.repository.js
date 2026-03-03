@@ -1,0 +1,71 @@
+import pool from "../../config/db.js";
+
+/**
+ * 포인트 요약 (현재 포인트 + 잠금 포인트)
+ */
+export const getSettlementSummary = async (ambassadorId) => {
+  const { rows } = await pool.query(
+    `
+    SELECT
+      ap.current_points,
+      ap.total_earned,
+      ap.total_withdrawn,
+      COALESCE((
+        SELECT SUM(amount)
+        FROM transaction_log
+        WHERE ambassador_id = $1
+          AND type = 'earn'
+          AND created_at >= NOW() - INTERVAL '1 month'
+      ), 0) AS locked_points
+    FROM ambassador_points ap
+    WHERE ap.ambassador_id = $1
+    `,
+    [ambassadorId]
+  );
+  return rows[0] || null;
+};
+
+/**
+ * 활성 정산 계좌 조회 (airwallex_beneficiary)
+ */
+export const getActiveBankAccount = async (ambassadorId) => {
+  const { rows } = await pool.query(
+    `
+    SELECT
+      account_name,
+      account_number_masked,
+      routing_type1,
+      routing_value1,
+      bank_country_code,
+      account_currency
+    FROM airwallex_beneficiary
+    WHERE ambassador_idx = $1 AND is_active = true
+    ORDER BY created_at DESC
+    LIMIT 1
+    `,
+    [ambassadorId]
+  );
+  return rows[0] || null;
+};
+
+/**
+ * 정산 요청 내역 조회 (airwallex_transfer)
+ */
+export const getSettlementHistory = async (ambassadorId) => {
+  const { rows } = await pool.query(
+    `
+    SELECT
+      idx,
+      transfer_amount,
+      transfer_currency,
+      status,
+      created_at
+    FROM airwallex_transfer
+    WHERE ambassador_idx = $1
+    ORDER BY created_at DESC
+    LIMIT 50
+    `,
+    [ambassadorId]
+  );
+  return rows;
+};

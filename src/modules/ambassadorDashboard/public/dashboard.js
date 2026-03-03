@@ -112,7 +112,10 @@ async function loadDashboard() {
 
 document.getElementById("btnWithdraw")?.addEventListener("click", (e) => {
   e.preventDefault();
-  alert("정산 기능은 다음 단계에서 연결합니다.");
+  const token = localStorage.getItem("ambassador_token");
+  const url = "https://kr.adamthefirstsin.com/pages/ambassador-settlement" +
+    (token ? "?token=" + encodeURIComponent(token) : "");
+  window.top.location.href = url;
 });
 
 document.getElementById("btnCustomize")?.addEventListener("click", (e) => {

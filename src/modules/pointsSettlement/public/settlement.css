@@ -1,0 +1,327 @@
+:root {
+  --bg: #f6f7f8;
+  --card-bg: #fff;
+  --text: #111;
+  --muted: #888;
+  --line: #e0e0e0;
+  --accent: #111;
+  --radius: 6px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+               "Noto Sans KR", Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  font-size: 13px;
+}
+
+/* ── 페이지 ── */
+.page {
+  min-height: 100vh;
+  padding: 40px 24px 48px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.pageTitle {
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 32px;
+  letter-spacing: .03em;
+}
+
+/* ── 4컬럼 그리드 ── */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1.4fr;
+  gap: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  overflow: hidden;
+}
+
+.card {
+  padding: 24px 20px;
+  border-right: 1px solid var(--line);
+}
+.card:last-child { border-right: none; }
+
+/* ── 섹션 레이블 ── */
+.cardLabel {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+.cardLabel .hint { font-size: 10px; }
+
+/* ── 환율 안내 ── */
+.rateInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 10px;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+/* ── 포인트 목록 ── */
+.pointsGroupLabel {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.pointsList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+.pointsList li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.pLabel {
+  font-size: 11px;
+  color: var(--text);
+  flex-shrink: 0;
+}
+.pValue {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+/* ── 정산 요청 버튼 ── */
+.btnSettle {
+  display: block;
+  width: 100%;
+  padding: 10px 0;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: .03em;
+}
+.btnSettle:hover { opacity: .85; }
+
+/* ── 정산계좌 ── */
+.bankInfo {
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.bankName {
+  font-size: 13px;
+  font-weight: 600;
+}
+.bankInstitute {
+  font-size: 12px;
+  color: var(--muted);
+}
+.bankNumber {
+  font-size: 13px;
+  letter-spacing: .04em;
+}
+
+.changeAccountLink {
+  font-size: 11px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.changeAccountLink.disabled {
+  pointer-events: none;
+  opacity: .5;
+}
+.changeAccountLink:not(.disabled):hover { text-decoration: underline; }
+
+/* ── 대기 내역 없음 / 빈 메시지 ── */
+.emptyMsg {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 8px 0;
+}
+
+/* ── 대기 항목 ── */
+.pendingItem {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.pendingItem:last-child { border-bottom: none; }
+.pendingDate { font-size: 11px; color: var(--muted); }
+.pendingAmt  { font-size: 12px; font-weight: 600; }
+
+/* ── 히스토리 테이블 ── */
+.historyTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.historyTable th {
+  text-align: left;
+  font-size: 11px;
+  color: var(--muted);
+  padding: 0 6px 10px 0;
+  border-bottom: 1px solid var(--line);
+  font-weight: 500;
+}
+.historyTable td {
+  padding: 9px 6px 9px 0;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+.historyTable tr:last-child td { border-bottom: none; }
+
+.statusChip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 600;
+  background: #e8f0fe;
+  color: #2a5cca;
+}
+.statusChip.done    { background: #e8f4ea; color: #2e7d32; }
+.statusChip.pending { background: #fff3e0; color: #e65100; }
+.statusChip.failed  { background: #fce8e8; color: #c62828; }
+
+.iconBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 14px;
+  padding: 2px;
+}
+.iconBtn:hover { color: var(--text); }
+
+/* ── 푸터 ── */
+.pageFooter {
+  margin-top: 32px;
+  text-align: right;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+.pageFooter a {
+  color: var(--muted);
+  text-decoration: none;
+}
+.pageFooter a:hover { text-decoration: underline; }
+
+/* ── 모달 ── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.modalOverlay.hidden { display: none; }
+
+.modal {
+  background: #fff;
+  border-radius: 10px;
+  padding: 28px 28px 24px;
+  width: min(360px, 90vw);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.modalTitle {
+  font-size: 15px;
+  font-weight: 700;
+}
+.modalDesc {
+  font-size: 12px;
+  color: var(--muted);
+}
+.modalField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.modalField label {
+  font-size: 11px;
+  color: var(--muted);
+}
+.modalField input {
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: 14px;
+  outline: none;
+}
+.modalField input:focus { border-color: #555; }
+.modalNote {
+  font-size: 10px;
+  color: var(--muted);
+}
+.modalActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+.btnCancel {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+}
+.btnConfirm {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+.btnConfirm:hover { opacity: .85; }
+.btnConfirm:disabled { opacity: .5; cursor: not-allowed; }
+.modalError {
+  font-size: 11px;
+  color: #c62828;
+  margin-top: -8px;
+}
+.modalError.hidden { display: none; }
+
+/* ── 반응형 ── */
+@media (max-width: 760px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .card:nth-child(2) { border-right: none; }
+  .card:nth-child(1),
+  .card:nth-child(2) { border-bottom: 1px solid var(--line); }
+}
+@media (max-width: 480px) {
+  .grid { grid-template-columns: 1fr; }
+  .card { border-right: none !important; border-bottom: 1px solid var(--line); }
+  .card:last-child { border-bottom: none; }
+}

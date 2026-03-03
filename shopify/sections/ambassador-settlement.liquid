@@ -1,0 +1,86 @@
+{% comment %}
+  정산 페이지 iframe 섹션
+  Shopify Admin > Themes > Edit code > sections 폴더에 추가
+  파일명: ambassador-settlement.liquid
+{% endcomment %}
+
+<div id="ambassador-settlement-wrap" style="width:100%; min-height:700px; background:#f6f7f8;">
+  <!-- 로딩 상태 -->
+  <div id="settlement-loading" style="display:flex; align-items:center; justify-content:center; height:300px; color:#888; font-size:14px;">
+    불러오는 중...
+  </div>
+
+  <!-- 로그인 안내 (토큰 없을 때) -->
+  <div id="settlement-login-msg" style="display:none; text-align:center; padding:60px 20px; color:#555; font-size:14px;">
+    <p>앰버서더 로그인이 필요합니다.</p>
+    <a href="/pages/ambassador-login" style="display:inline-block; margin-top:16px; padding:10px 24px; background:#111; color:#fff; text-decoration:none; border-radius:6px; font-size:13px;">
+      로그인하기
+    </a>
+  </div>
+
+  <!-- 정산 iframe -->
+  <iframe
+    id="settlement-iframe"
+    src=""
+    style="display:none; width:100%; min-height:700px; border:none;"
+    scrolling="yes"
+    allowtransparency="true"
+  ></iframe>
+</div>
+
+<script>
+(function () {
+  var API_ORIGIN = 'https://api.adamthefirstsin.com';
+  var SETTLEMENT_PATH = '/iframe/ambassador/settlement';
+
+  var loadingEl = document.getElementById('settlement-loading');
+  var loginMsg  = document.getElementById('settlement-login-msg');
+  var iframe    = document.getElementById('settlement-iframe');
+
+  function getToken() {
+    // 1순위: URL ?token= 파라미터 (로그인 후 리다이렉트 시)
+    var params = new URLSearchParams(window.location.search);
+    var urlToken = params.get('token');
+    if (urlToken) {
+      localStorage.setItem('ambassador_token', urlToken);
+      // URL에서 token 파라미터 제거
+      var cleanUrl = window.location.pathname;
+      history.replaceState(null, '', cleanUrl);
+      return urlToken;
+    }
+    // 2순위: localStorage
+    return localStorage.getItem('ambassador_token');
+  }
+
+  var token = getToken();
+
+  if (!token) {
+    loadingEl.style.display = 'none';
+    loginMsg.style.display  = 'block';
+    return;
+  }
+
+  // iframe 로드
+  var iframeSrc = API_ORIGIN + SETTLEMENT_PATH + '?token=' + encodeURIComponent(token);
+  iframe.src = iframeSrc;
+
+  iframe.addEventListener('load', function () {
+    loadingEl.style.display = 'none';
+    iframe.style.display    = 'block';
+  });
+
+  // 10초 타임아웃
+  setTimeout(function () {
+    if (loadingEl.style.display !== 'none') {
+      loadingEl.innerHTML = '<p style="color:#c00;">로드에 실패했습니다. 새로고침 해주세요.</p>';
+    }
+  }, 10000);
+})();
+</script>
+
+{% schema %}
+{
+  "name": "Ambassador Settlement",
+  "settings": []
+}
+{% endschema %}
