@@ -62,6 +62,7 @@ export const registerBeneficiaryService = async (ambassadorId, {
   account_name,
   account_number,
   bank_code,
+  bank_name,
   date_of_birth,
   email,
 }) => {
@@ -84,8 +85,9 @@ export const registerBeneficiaryService = async (ambassadorId, {
         account_currency: "KRW",
         account_name,
         account_number,
-        account_routing_type1: "BANK_CODE",
-        account_routing_value1: bank_code,
+        // KR LOCAL 이체는 routing type 불필요 (error code 011)
+        // bank_name은 있을 때만 포함
+        ...(bank_name && { bank_name }),
       },
     },
   };

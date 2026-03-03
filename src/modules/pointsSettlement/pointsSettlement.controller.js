@@ -39,9 +39,9 @@ export async function getBeneficiary(req, res) {
  */
 export async function registerBeneficiary(req, res) {
   try {
-    const { account_name, account_number, bank_code, date_of_birth, email } = req.body;
+    const { account_name, account_number, bank_code, bank_name, date_of_birth, email } = req.body;
 
-    if (!account_name || !account_number || !bank_code || !date_of_birth) {
+    if (!account_name || !account_number || !date_of_birth) {
       return res.status(400).json({ message: "필수 항목이 누락되었습니다." });
     }
 
@@ -49,6 +49,7 @@ export async function registerBeneficiary(req, res) {
       account_name,
       account_number,
       bank_code,
+      bank_name,
       date_of_birth,
       email: email || req.user.email,
     });
