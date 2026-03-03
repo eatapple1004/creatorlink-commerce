@@ -74,6 +74,17 @@ export async function insertCreateRequest(client, {
   return rows[0];
 }
 
+export async function deactivatePrevious(client, { ambassador_idx, excludeIdx }) {
+  const sql = `
+    update public.airwallex_beneficiary
+    set is_active = false, updated_at = now()
+    where ambassador_idx = $1
+      and idx != $2
+      and is_active = true;
+  `;
+  await client.query(sql, [ambassador_idx, excludeIdx]);
+}
+
 export async function updateRegisterSuccess(client, {
   idx,
   airwallex_beneficiary_id,
@@ -85,6 +96,7 @@ export async function updateRegisterSuccess(client, {
       airwallex_beneficiary_id = $2,
       response_payload = $3::jsonb,
       status = 'REGISTERED',
+      is_active = true,
       updated_at = now()
     where idx = $1
     returning *;

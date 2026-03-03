@@ -113,7 +113,8 @@ export async function registerBeneficiary({ ambassadorIdx, airwallexPayload }) {
             throw err;
         }
     
-        // 3) 성공 업데이트
+        // 3) 기존 활성 계좌 비활성화 후 성공 업데이트
+        await repo.deactivatePrevious(client, { ambassador_idx: ambassadorIdx, excludeIdx: inserted.idx });
         const updated = await repo.updateRegisterSuccess(client, {
             idx: inserted.idx,
             airwallex_beneficiary_id: airwallexBeneficiaryId,
