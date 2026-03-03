@@ -64,6 +64,7 @@ export async function registerBeneficiary({ ambassadorIdx, airwallexPayload }) {
         const token = await getAirwallexAccessToken();
         const baseUrl = getAirwallexBaseUrl();
         const url = `${baseUrl}/api/v1/beneficiaries/create`;
+        console.log('[Airwallex][beneficiary] payload:', JSON.stringify(airwallexPayload, null, 2));
     
         let resp;
         try {
@@ -81,12 +82,16 @@ export async function registerBeneficiary({ ambassadorIdx, airwallexPayload }) {
             status: e.response?.status,
             data: e.response?.data,
             };
-    
+
+            // 상세 validation 에러 출력
+            console.error('[Airwallex][beneficiary] status:', errorPayload.status);
+            console.error('[Airwallex][beneficiary] detail:', JSON.stringify(errorPayload.data, null, 2));
+
             // 2-1) 실패 업데이트
             await repo.updateRegisterFailed(client, { idx: inserted.idx, error_payload: errorPayload });
-    
+
             await client.query('COMMIT');
-    
+
             const err = new Error(`Airwallex beneficiary create failed: ${errorPayload.status ?? ''}`);
             err.status = 502;
             err.detail = errorPayload;
