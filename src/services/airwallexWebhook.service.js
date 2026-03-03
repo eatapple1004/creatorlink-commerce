@@ -19,20 +19,32 @@ function verifyAirwallexSignature(signature, timestamp, rawBody) {
     const secret = process.env.AIRWALLEX_WEBHOOK_SECRET;
     if (!secret) {
         console.warn("[Airwallex Webhook] AIRWALLEX_WEBHOOK_SECRET not set — skipping signature verification");
-        return true; // 개발 환경에서 미설정 시 통과
+        return true;
     }
-    if (!signature || !timestamp) return false;
+    if (!signature || !timestamp) {
+        console.warn("[Airwallex Webhook] Missing signature or timestamp header");
+        return false;
+    }
 
-    const payload  = `${timestamp}.${rawBody.toString("utf8")}`;
-    const expected = crypto
-        .createHmac("sha256", secret)
-        .update(payload)
-        .digest("hex");
+    const bodyStr = rawBody.toString("utf8");
 
-    return crypto.timingSafeEqual(
-        Buffer.from(signature, "hex"),
-        Buffer.from(expected,  "hex")
-    );
+    // Airwallex 서명 방식 1: timestamp + rawBody (구분자 없음)
+    const expected1 = crypto.createHmac("sha256", secret).update(`${timestamp}${bodyStr}`).digest("hex");
+    // Airwallex 서명 방식 2: timestamp + "." + rawBody
+    const expected2 = crypto.createHmac("sha256", secret).update(`${timestamp}.${bodyStr}`).digest("hex");
+
+    console.log("[Airwallex Webhook] received signature :", signature);
+    console.log("[Airwallex Webhook] expected (no dot)  :", expected1);
+    console.log("[Airwallex Webhook] expected (with dot):", expected2);
+
+    if (signature === expected1 || signature === expected2) return true;
+
+    // base64 인코딩으로도 시도
+    const expected1b64 = crypto.createHmac("sha256", secret).update(`${timestamp}${bodyStr}`).digest("base64");
+    const expected2b64 = crypto.createHmac("sha256", secret).update(`${timestamp}.${bodyStr}`).digest("base64");
+    if (signature === expected1b64 || signature === expected2b64) return true;
+
+    return false;
 }
 
 /**
