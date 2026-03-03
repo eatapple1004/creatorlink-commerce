@@ -27,24 +27,9 @@ function verifyAirwallexSignature(signature, timestamp, rawBody) {
     }
 
     const bodyStr = rawBody.toString("utf8");
+    const expected = crypto.createHmac("sha256", secret).update(`${timestamp}${bodyStr}`).digest("hex");
 
-    // Airwallex 서명 방식 1: timestamp + rawBody (구분자 없음)
-    const expected1 = crypto.createHmac("sha256", secret).update(`${timestamp}${bodyStr}`).digest("hex");
-    // Airwallex 서명 방식 2: timestamp + "." + rawBody
-    const expected2 = crypto.createHmac("sha256", secret).update(`${timestamp}.${bodyStr}`).digest("hex");
-
-    console.log("[Airwallex Webhook] received signature :", signature);
-    console.log("[Airwallex Webhook] expected (no dot)  :", expected1);
-    console.log("[Airwallex Webhook] expected (with dot):", expected2);
-
-    if (signature === expected1 || signature === expected2) return true;
-
-    // base64 인코딩으로도 시도
-    const expected1b64 = crypto.createHmac("sha256", secret).update(`${timestamp}${bodyStr}`).digest("base64");
-    const expected2b64 = crypto.createHmac("sha256", secret).update(`${timestamp}.${bodyStr}`).digest("base64");
-    if (signature === expected1b64 || signature === expected2b64) return true;
-
-    return false;
+    return signature === expected;
 }
 
 /**
@@ -78,6 +63,7 @@ export const processAirwallexWebhookService = async ({ signature, timestamp, raw
     const obj       = body?.data?.object ?? {};
 
     console.log(`[Airwallex Webhook] event: ${eventName}, transfer_id: ${obj.id}`);
+    console.log(`[Airwallex Webhook] full payload:`, JSON.stringify(body, null, 2));
 
     // 이벤트 → 처리할 status 매핑
     const EVENT_STATUS_MAP = {
