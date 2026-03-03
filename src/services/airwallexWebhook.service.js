@@ -38,8 +38,12 @@ function verifyAirwallexSignature(signature, timestamp, rawBody) {
 /**
  * Airwallex Webhook 처리 서비스
  * 지원 이벤트:
- *   - transfer.updated (COMPLETED → 상태 확정)
- *   - transfer.updated (FAILED / CANCELLED → 상태 갱신 + 포인트 복원)
+ *   - payout.transfer.paid       → COMPLETED (상태 확정)
+ *   - payout.transfer.failed     → FAILED    (상태 갱신 + 포인트 복원)
+ *   - payout.transfer.cancelled  → CANCELLED (상태 갱신 + 포인트 복원)
+ *   - payout.transfer.scheduled  → SCHEDULED (상태 업데이트)
+ *   - payout.transfer.processing → PROCESSING (상태 업데이트)
+ *   - payout.transfer.sent       → SENT (상태 업데이트)
  */
 export const processAirwallexWebhookService = async ({ signature, timestamp, rawBody }) => {
     // 1) 서명 검증
@@ -61,15 +65,25 @@ export const processAirwallexWebhookService = async ({ signature, timestamp, raw
     const eventName = body?.name;
     const obj       = body?.data?.object ?? {};
 
-    console.log(`[Airwallex Webhook] event: ${eventName}, transfer_id: ${obj.id}, status: ${obj.status}`);
+    console.log(`[Airwallex Webhook] event: ${eventName}, transfer_id: ${obj.id}`);
 
-    if (eventName !== "transfer.updated") {
+    // 이벤트 → 처리할 status 매핑
+    const EVENT_STATUS_MAP = {
+        "payout.transfer.paid":       "COMPLETED",
+        "payout.transfer.failed":     "FAILED",
+        "payout.transfer.cancelled":  "CANCELLED",
+        "payout.transfer.scheduled":  "SCHEDULED",
+        "payout.transfer.processing": "PROCESSING",
+        "payout.transfer.sent":       "SENT",
+    };
+
+    const newStatus = EVENT_STATUS_MAP[eventName];
+    if (!newStatus) {
         // 처리 대상 외 이벤트는 무시
         return;
     }
 
     const airwallexTransferId = obj.id;
-    const newStatus           = (obj.status ?? "").toUpperCase();
 
     if (!airwallexTransferId || !newStatus) return;
 
