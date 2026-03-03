@@ -4,8 +4,8 @@ const db = (client) => client ?? pool;
 /**
  * 특정 엠버서더 포인트 레코드 조회
  */
-export const findPointsByAmbassador = async (ambassadorId) => {
-  const result = await pool.query(
+export const findPointsByAmbassador = async (ambassadorId, client = null) => {
+  const result = await db(client).query(
     "SELECT * FROM ambassador_points WHERE ambassador_id = $1",
     [ambassadorId]
   );
@@ -15,12 +15,12 @@ export const findPointsByAmbassador = async (ambassadorId) => {
 /**
  * 포인트 레코드 갱신
  */
-export const savePoints = async (ambassadorId, updates) => {
+export const savePoints = async (ambassadorId, updates, client = null) => {
   const { current_points, total_earned, total_withdrawn } = updates;
-  
+
   const query = `
     UPDATE ambassador_points
-    SET 
+    SET
       current_points = $1,
       total_earned = $2,
       total_withdrawn = $3,
@@ -29,7 +29,7 @@ export const savePoints = async (ambassadorId, updates) => {
     RETURNING *;
   `;
   const values = [current_points, total_earned, total_withdrawn, ambassadorId];
-  const result = await pool.query(query, values);
+  const result = await db(client).query(query, values);
   return result.rows[0];
 };
 
@@ -44,14 +44,14 @@ export const insertTransaction = async ({
   reference_type = null,
   reference_id = null,
   description = null,
-}) => {
+}, client = null) => {
   const query = `
     INSERT INTO transaction_log (
       ambassador_id, type, amount, balance_after, reference_type, reference_id, description
     ) VALUES ($1, $2, $3, $4, $5, $6, $7)
     RETURNING *;
   `;
-  const result = await pool.query(query, [
+  const result = await db(client).query(query, [
     ambassador_id,
     type,
     amount,

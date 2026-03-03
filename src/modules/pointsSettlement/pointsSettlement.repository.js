@@ -26,7 +26,7 @@ export const getSettlementSummary = async (ambassadorId) => {
 };
 
 /**
- * 활성 정산 계좌 조회 (airwallex_beneficiary)
+ * 활성 정산 계좌 조회 (표시용 - 마스킹된 정보)
  */
 export const getActiveBankAccount = async (ambassadorId) => {
   const { rows } = await pool.query(
@@ -39,7 +39,24 @@ export const getActiveBankAccount = async (ambassadorId) => {
       bank_country_code,
       account_currency
     FROM airwallex_beneficiary
-    WHERE ambassador_idx = $1 AND is_active = true
+    WHERE ambassador_idx = $1 AND is_active = true AND status = 'REGISTERED'
+    ORDER BY created_at DESC
+    LIMIT 1
+    `,
+    [ambassadorId]
+  );
+  return rows[0] || null;
+};
+
+/**
+ * 활성 수취인 전체 정보 조회 (출금용 - airwallex_beneficiary_id 포함)
+ */
+export const getActiveBeneficiary = async (ambassadorId) => {
+  const { rows } = await pool.query(
+    `
+    SELECT *
+    FROM airwallex_beneficiary
+    WHERE ambassador_idx = $1 AND is_active = true AND status = 'REGISTERED'
     ORDER BY created_at DESC
     LIMIT 1
     `,

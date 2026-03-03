@@ -2,7 +2,12 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import { verifyToken } from "../../middlewares/verifyToken.js";
-import { getSettlementData } from "./pointsSettlement.controller.js";
+import {
+  getSettlementData,
+  getBeneficiary,
+  registerBeneficiary,
+  submitWithdrawal,
+} from "./pointsSettlement.controller.js";
 
 const router = express.Router();
 
@@ -20,7 +25,14 @@ router.get("/settlement", (req, res) => {
   res.sendFile(path.join(viewsDir, "settlement.html"));
 });
 
-// 정산 데이터 API
-router.get("/api/settlement", verifyToken, getSettlementData);
+// ── API (모두 JWT 필요) ──────────────────────────────────────────
+// 정산 요약 데이터
+router.get("/api/settlement",              verifyToken, getSettlementData);
+// 수취인 계좌 확인
+router.get("/api/settlement/beneficiary",  verifyToken, getBeneficiary);
+// 수취인 계좌 등록
+router.post("/api/settlement/beneficiary", verifyToken, registerBeneficiary);
+// 출금 요청
+router.post("/api/settlement/withdraw",    verifyToken, submitWithdrawal);
 
 export default router;

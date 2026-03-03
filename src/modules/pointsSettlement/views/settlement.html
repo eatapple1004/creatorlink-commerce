@@ -18,7 +18,6 @@
           <span>*KRW = 1point</span>
           <span>1USD = 1,400point</span>
         </div>
-
         <p class="pointsGroupLabel">정산 포인트</p>
         <ul class="pointsList">
           <li>
@@ -34,17 +33,19 @@
             <span class="pValue" id="lockedPoints">-</span>
           </li>
         </ul>
-
         <button class="btnSettle" id="btnSettle">정산 요청</button>
       </section>
 
       <!-- 2) 정산계좌 -->
       <section class="card">
         <p class="cardLabel">정산계좌</p>
-        <div class="bankInfo" id="bankInfo">
-          <p class="bankName" id="bankAccountName">-</p>
-          <p class="bankInstitute" id="bankInstitute">-</p>
-          <p class="bankNumber" id="bankNumber">-</p>
+        <div id="bankInfoWrap">
+          <div class="bankInfo" id="bankInfoFilled" style="display:none;">
+            <p class="bankName" id="bankAccountName">-</p>
+            <p class="bankInstitute" id="bankInstitute">-</p>
+            <p class="bankNumber" id="bankNumber">-</p>
+          </div>
+          <p class="emptyMsg" id="bankInfoEmpty">등록된 계좌가 없습니다.</p>
         </div>
         <a class="changeAccountLink disabled" href="#" id="btnChangeAccount">정산 계좌 변경</a>
       </section>
@@ -70,9 +71,7 @@
             </tr>
           </thead>
           <tbody id="historyBody">
-            <tr>
-              <td colspan="4" class="emptyMsg">요청 내역이 없습니다.</td>
-            </tr>
+            <tr><td colspan="4" class="emptyMsg">요청 내역이 없습니다.</td></tr>
           </tbody>
         </table>
       </section>
@@ -84,22 +83,94 @@
     </footer>
   </main>
 
-  <!-- 정산 요청 모달 -->
-  <div class="modalOverlay hidden" id="settleModal">
-    <div class="modal">
+  <!-- ── 공통 모달 오버레이 ── -->
+  <div class="modalOverlay hidden" id="modalOverlay">
+
+    <!-- [ A ] 계좌 등록 멀티스텝 모달 -->
+    <div class="modal" id="modalRegister">
+      <!-- 스텝 인디케이터 -->
+      <div class="stepBar">
+        <div class="step active" id="si1">1</div>
+        <div class="stepLine"></div>
+        <div class="step" id="si2">2</div>
+        <div class="stepLine"></div>
+        <div class="step" id="si3">3</div>
+      </div>
+
+      <!-- Step 1: 개인 정보 -->
+      <div class="stepPanel" id="stepPanel1">
+        <h2 class="modalTitle">정산 계좌 등록</h2>
+        <p class="modalDesc">계좌 실명 및 기본 정보를 입력해주세요.</p>
+        <div class="modalField">
+          <label>예금주 실명</label>
+          <input type="text" id="regName" placeholder="홍길동" />
+        </div>
+        <div class="modalField">
+          <label>생년월일</label>
+          <input type="text" id="regDob" placeholder="YYYY-MM-DD (예: 1990-01-01)" maxlength="10" />
+        </div>
+        <div class="modalField">
+          <label>이메일</label>
+          <input type="email" id="regEmail" placeholder="example@email.com" />
+        </div>
+        <p class="modalError hidden" id="regErr1"></p>
+        <div class="modalActions">
+          <button class="btnCancel" id="btnRegCancel1">취소</button>
+          <button class="btnConfirm" id="btnStep1Next">다음</button>
+        </div>
+      </div>
+
+      <!-- Step 2: 은행 선택 -->
+      <div class="stepPanel hidden" id="stepPanel2">
+        <h2 class="modalTitle">은행 선택</h2>
+        <p class="modalDesc">정산 받을 은행을 선택해주세요.</p>
+        <div class="modalField">
+          <label>은행</label>
+          <select id="regBank">
+            <option value="">-- 불러오는 중 --</option>
+          </select>
+        </div>
+        <p class="modalError hidden" id="regErr2"></p>
+        <div class="modalActions">
+          <button class="btnCancel" id="btnStep2Back">이전</button>
+          <button class="btnConfirm" id="btnStep2Next">다음</button>
+        </div>
+      </div>
+
+      <!-- Step 3: 계좌번호 입력 -->
+      <div class="stepPanel hidden" id="stepPanel3">
+        <h2 class="modalTitle">계좌번호 입력</h2>
+        <p class="modalDesc">계좌번호를 입력해주세요 (숫자만).</p>
+        <div class="modalField">
+          <label>계좌번호</label>
+          <input type="text" id="regAccount" placeholder="01012345678" inputmode="numeric" />
+        </div>
+        <p class="modalNote">* 하이픈(-) 없이 숫자만 입력해주세요.</p>
+        <p class="modalError hidden" id="regErr3"></p>
+        <div class="modalActions">
+          <button class="btnCancel" id="btnStep3Back">이전</button>
+          <button class="btnConfirm" id="btnStep3Submit">등록하기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- [ B ] 출금 모달 -->
+    <div class="modal hidden" id="modalWithdraw">
       <h2 class="modalTitle">정산 요청</h2>
+      <div class="withdrawAccount" id="withdrawAccountInfo"></div>
       <p class="modalDesc">출금 가능 포인트: <strong id="modalWithdrawable">0</strong>pts</p>
       <div class="modalField">
         <label>정산 금액 (포인트)</label>
-        <input type="number" id="settleAmount" placeholder="0" min="1" />
+        <input type="number" id="withdrawAmount" placeholder="0" min="1" />
       </div>
       <p class="modalNote">* 적립 후 1개월이 지난 포인트만 출금 가능합니다.</p>
+      <p class="modalError hidden" id="withdrawErr"></p>
       <div class="modalActions">
-        <button class="btnCancel" id="btnModalCancel">취소</button>
-        <button class="btnConfirm" id="btnModalConfirm">확인</button>
+        <button class="btnCancel" id="btnWithdrawCancel">취소</button>
+        <button class="btnConfirm" id="btnWithdrawConfirm">정산 요청</button>
       </div>
-      <p class="modalError hidden" id="modalError"></p>
     </div>
+
   </div>
 
   <script src="/iframe/ambassador/points-settlement/settlement.js"></script>
