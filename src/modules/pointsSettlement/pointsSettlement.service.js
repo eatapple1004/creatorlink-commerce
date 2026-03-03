@@ -121,6 +121,14 @@ export const submitWithdrawalService = async ({ ambassador_id, amount }) => {
   const withdrawn  = parseFloat(record.total_withdrawn);
   const withdrawable = Math.max(0, current - lockedPoints);
 
+  // Airwallex 최소 송금액: 1 USD ≈ 1,400 KRW (여유분 포함 2,000 KRW)
+  const MIN_WITHDRAW = 2000;
+  if (amount < MIN_WITHDRAW) {
+    const err = new Error("BELOW_MINIMUM_AMOUNT");
+    err.minimum = MIN_WITHDRAW;
+    throw err;
+  }
+
   if (withdrawable < amount) {
     const err = new Error("INSUFFICIENT_WITHDRAWABLE");
     err.withdrawable = withdrawable;

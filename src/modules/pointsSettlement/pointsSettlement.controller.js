@@ -101,6 +101,11 @@ export async function submitWithdrawal(req, res) {
     res.json({ success: true, result });
   } catch (err) {
     console.error("❌ submitWithdrawal error:", err.message);
+    if (err.message === "BELOW_MINIMUM_AMOUNT") {
+      return res.status(400).json({
+        message: `최소 정산 금액은 ${(err.minimum ?? 2000).toLocaleString()}pts 입니다.`,
+      });
+    }
     if (err.message === "INSUFFICIENT_WITHDRAWABLE") {
       return res.status(400).json({
         message: `출금 가능한 포인트가 부족합니다. (출금 가능: ${err.withdrawable ?? 0}pts)`,
