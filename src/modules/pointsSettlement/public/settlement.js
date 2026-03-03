@@ -21,7 +21,7 @@ function formatDate(iso) {
 function statusLabel(s) {
   const up = (s || "").toUpperCase();
   if (up === "COMPLETED")   return { text: "정산 완료", cls: "done" };
-  if (["CREATED","INITIATED","PENDING","PROCESSING"].includes(up))
+  if (["CREATED","INITIATED","PENDING","PROCESSING","SCHEDULED"].includes(up))
                              return { text: "진행 중",  cls: "pending" };
   if (["FAILED","CANCELLED"].includes(up))
                              return { text: "실패",     cls: "failed" };

@@ -14,7 +14,7 @@ import {
 import { registerBeneficiary } from "../../services/airwallexBeneficiary.service.js";
 import { createTransfer } from "../../services/airwallexTransfer.service.js";
 
-const PENDING_STATUSES = new Set(["CREATED", "INITIATED", "PENDING", "PROCESSING"]);
+const PENDING_STATUSES = new Set(["CREATED", "INITIATED", "PENDING", "PROCESSING", "SCHEDULED"]);
 
 /**
  * 정산 페이지 전체 데이터
