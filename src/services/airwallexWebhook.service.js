@@ -60,10 +60,9 @@ export const processAirwallexWebhookService = async ({ signature, timestamp, raw
     }
 
     const eventName = body?.name;
-    const obj       = body?.data?.object ?? {};
+    const obj       = body?.data ?? {};  // data가 바로 transfer 객체
 
-    console.log(`[Airwallex Webhook] event: ${eventName}, transfer_id: ${obj.id}`);
-    console.log(`[Airwallex Webhook] full payload:`, JSON.stringify(body, null, 2));
+    console.log(`[Airwallex Webhook] event: ${eventName}, transfer_id: ${obj.id}, status: ${obj.status}`);
 
     // 이벤트 → 처리할 status 매핑
     const EVENT_STATUS_MAP = {
