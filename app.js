@@ -16,6 +16,7 @@ import shopifyWebhook from "./src/routes/shopifyWebhook.routes.js";
 import airwallex                  from "./src/routes/airwallex.route.js";
 import airwallexBeneficiaryRoutes from "./src/routes/airwallexBeneficiary.routes.js";
 import airwallexTransferRoutes    from './src/routes/airwallexTransfer.routes.js';
+import airwallexWebhookRoutes     from './src/routes/airwallexWebhook.routes.js';
 
 import ambassadorDashboardRoutes  from "./src/modules/ambassadorDashboard/ambassadorDashboard.routes.js";
 import pointsSettlementRoutes     from "./src/modules/pointsSettlement/pointsSettlement.routes.js";
@@ -57,6 +58,7 @@ app.use(
 
 app.use(cookieParser());
 app.use("/api/shopify/webhook",  express.raw({ type: "*/*" }));
+app.use("/api/airwallex/webhook", express.raw({ type: "*/*" }));
 
 app.use(express.json());
 app.use("/api/auth",            authRouter);
@@ -70,6 +72,7 @@ app.use("/api/shopify/webhook", shopifyWebhook);
 app.use("/api/airwallex", airwallex);
 app.use("/api/airwallex", airwallexBeneficiaryRoutes);
 app.use('/api/airwallex', airwallexTransferRoutes);
+app.use('/api/airwallex', airwallexWebhookRoutes);
 
 app.use("/iframe/ambassador", ambassadorDashboardRoutes);
 app.use("/iframe/ambassador", pointsSettlementRoutes);

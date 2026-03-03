@@ -87,6 +87,38 @@ export async function markSuccess(client, requestId, respData) {
   return rows[0];
 }
 
+export async function findByAirwallexTransferId(clientOrPool, airwallexTransferId) {
+  const { rows } = await clientOrPool.query(
+    `
+    SELECT *
+    FROM public.airwallex_transfer
+    WHERE airwallex_transfer_id = $1
+    LIMIT 1
+    `,
+    [airwallexTransferId]
+  );
+  return rows[0] ?? null;
+}
+
+export async function updateTransferStatus(client, airwallexTransferId, status, responseData = null) {
+  const { rows } = await client.query(
+    `
+    UPDATE public.airwallex_transfer
+    SET status       = $2,
+        response_json = COALESCE($3::jsonb, response_json),
+        updated_at   = now()
+    WHERE airwallex_transfer_id = $1
+    RETURNING *
+    `,
+    [
+      airwallexTransferId,
+      status,
+      responseData ? JSON.stringify(responseData) : null,
+    ]
+  );
+  return rows[0];
+}
+
 export async function markFailure(client, requestId, errObj) {
   const { rows } = await client.query(
     `
