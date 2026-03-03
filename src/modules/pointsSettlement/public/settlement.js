@@ -378,6 +378,9 @@ document.getElementById("btnSettle").addEventListener("click", async () => {
     const res  = await authFetch(`${API_BASE}/api/settlement/beneficiary`);
     const data = await res.json();
 
+    console.log("[debug] beneficiary check:", JSON.stringify(data));
+    console.log("[debug] bankInfoFilled display:", document.getElementById("bankInfoFilled").style.display);
+
     if (data.exists) {
       // 계좌 있음 → 출금 모달
       const bank = document.getElementById("bankInfoFilled").style.display !== "none"
@@ -387,9 +390,11 @@ document.getElementById("btnSettle").addEventListener("click", async () => {
             account_number_masked:document.getElementById("bankNumber").textContent,
           }
         : null;
+      console.log("[debug] opening withdraw modal, bank:", JSON.stringify(bank));
       openWithdrawModal(bank);
     } else {
       // 계좌 없음 → 등록 플로우
+      console.log("[debug] opening register flow");
       openRegisterFlow();
     }
   } catch {
