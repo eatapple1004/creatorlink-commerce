@@ -214,11 +214,14 @@ document.getElementById("btnStep1Next").addEventListener("click", () => {
   const email = document.getElementById("regEmail").value.trim();
 
   if (!name)  return showRegErr(1, "예금주 실명을 입력해주세요.");
-  if (!dob || !/^\d{4}-\d{2}-\d{2}$/.test(dob)) return showRegErr(1, "생년월일을 YYYY-MM-DD 형식으로 입력해주세요.");
+  if (!dob || !/^\d{8}$/.test(dob)) return showRegErr(1, "생년월일을 8자리로 입력해주세요. (예: 19900101)");
   if (!email) return showRegErr(1, "이메일을 입력해주세요.");
 
+  // YYYYMMDD → YYYY-MM-DD 변환 (Airwallex API 형식)
+  const dobFormatted = `${dob.slice(0,4)}-${dob.slice(4,6)}-${dob.slice(6,8)}`;
+
   regData.account_name = name;
-  regData.date_of_birth = dob;
+  regData.date_of_birth = dobFormatted;
   regData.email = email;
   setStep(2);
 });
