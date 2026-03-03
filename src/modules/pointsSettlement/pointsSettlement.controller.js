@@ -42,8 +42,23 @@ export async function registerBeneficiary(req, res) {
     const { account_name, account_number, bank_code, date_of_birth, email,
             city, postcode, street_address } = req.body;
 
-    if (!account_name || !account_number || !bank_code || !date_of_birth || !city || !postcode || !street_address) {
-      return res.status(400).json({ message: "필수 항목이 누락되었습니다." });
+    console.log('[settlement] registerBeneficiary body:', JSON.stringify({
+      account_name, account_number, bank_code, date_of_birth,
+      email, city, postcode, street_address,
+    }));
+
+    const missing = [];
+    if (!account_name)   missing.push('account_name');
+    if (!account_number) missing.push('account_number');
+    if (!bank_code)      missing.push('bank_code');
+    if (!date_of_birth)  missing.push('date_of_birth');
+    if (!city)           missing.push('city');
+    if (!postcode)       missing.push('postcode');
+    if (!street_address) missing.push('street_address');
+
+    if (missing.length > 0) {
+      console.warn('[settlement] missing fields:', missing);
+      return res.status(400).json({ message: `필수 항목 누락: ${missing.join(', ')}` });
     }
 
     const result = await registerBeneficiaryService(req.user.id, {

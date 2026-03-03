@@ -262,12 +262,14 @@ document.getElementById("btnStep3Submit").addEventListener("click", async () => 
   btn.textContent = "등록 중...";
 
   try {
+    console.log('[debug] regData 전송:', JSON.stringify(regData));
     const res  = await authFetch(`${API_BASE}/api/settlement/beneficiary`, {
       method: "POST",
       body: JSON.stringify(regData),
     });
     const body = await res.json();
     if (!res.ok) {
+      console.error('[debug] 등록 실패:', body);
       showRegErr(3, body.message || "등록에 실패했습니다.");
       return;
     }
