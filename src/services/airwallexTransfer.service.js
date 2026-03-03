@@ -82,6 +82,8 @@ export async function createTransfer({ ambassadorIdx, payload }) {
                 data: e.response?.data ?? null,
                 message: e.message,
             };
+            console.error('[Airwallex][transfer] status:', errObj.status);
+            console.error('[Airwallex][transfer] detail:', JSON.stringify(errObj.data, null, 2));
             await repo.markFailure(client, payload.request_id, errObj);
             await client.query('COMMIT');
 
