@@ -12,6 +12,7 @@ import {
     findPointsByAmbassador,
     savePoints,
     insertTransaction,
+    getLockedPoints,
 } from "../repositories/points.repository.js";
 
 import paypal from "@paypal/payouts-sdk";
@@ -24,7 +25,19 @@ export const requestWithdrawService = async ({ ambassador_id, amount }) => {
         // 1️⃣ 포인트 확인
         const record = await findPointsByAmbassador(ambassador_id);
         if (!record) throw new Error("포인트 계좌를 찾을 수 없습니다.");
-        if (record.current_points < amount) throw new Error("잔액이 부족합니다.");
+
+        // 1개월 이내 적립된 포인트는 출금 불가 (잠금 포인트)
+        const lockedPoints = await getLockedPoints(ambassador_id, client);
+        const current_points = parseFloat(record.current_points);
+        const withdrawable = Math.max(0, current_points - lockedPoints);
+        if (withdrawable < amount) {
+            throw new Error(
+                `출금 가능한 포인트가 부족합니다. ` +
+                `현재 포인트: ${current_points}, ` +
+                `잠금 포인트(1개월 이내 적립): ${lockedPoints}, ` +
+                `출금 가능: ${withdrawable}`
+            );
+        }
 
         // 2️⃣ PayPal 이메일 조회 (쿼리는 Repository에서 처리)
         const ambassador = await getPaypalEmailByAmbassadorId(client, ambassador_id);

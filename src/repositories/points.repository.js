@@ -91,6 +91,21 @@ export const existsEarnByShopifyOrder = async (orderId) => {
 };
 
 /**
+ * 1개월 이내 적립된 포인트 합계 (출금 불가 잠금 포인트)
+ */
+export const getLockedPoints = async (ambassadorId, client = null) => {
+  const sql = `
+    SELECT COALESCE(SUM(amount), 0) AS locked_points
+    FROM transaction_log
+    WHERE ambassador_id = $1
+      AND type = 'earn'
+      AND created_at >= NOW() - INTERVAL '1 month'
+  `;
+  const { rows } = await db(client).query(sql, [ambassadorId]);
+  return Number(rows[0]?.locked_points ?? 0);
+};
+
+/**
  * order_id 기준으로 적립된 포인트 총합 조회
  */
 export const getEarnedPointsByOrderId = async (orderId, client = null) => {
