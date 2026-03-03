@@ -62,13 +62,15 @@ export const registerBeneficiaryService = async (ambassadorId, {
   account_name,
   account_number,
   bank_code,
-  bank_name,
   date_of_birth,
   email,
+  city,
+  postcode,
+  street_address,
 }) => {
   const airwallexPayload = {
     nickname: `${account_name}_KRW`,
-    payer_entity_type: "PERSONAL",
+    payer_entity_type: "COMPANY",        // 송금 주체는 우리 회사
     transfer_methods: ["LOCAL"],
     beneficiary: {
       entity_type: "PERSONAL",
@@ -76,18 +78,21 @@ export const registerBeneficiaryService = async (ambassadorId, {
       date_of_birth,
       additional_info: {
         personal_email: email,
+        external_identifier: "",
       },
       address: {
         country_code: "KR",
+        city,
+        postcode,
+        street_address,
       },
       bank_details: {
         bank_country_code: "KR",
         account_currency: "KRW",
         account_name,
         account_number,
-        // KR LOCAL 이체는 routing type 불필요 (error code 011)
-        // bank_name은 있을 때만 포함
-        ...(bank_name && { bank_name }),
+        account_routing_type1: "bank_code",  // 소문자 필수 (대문자 시 error 011)
+        account_routing_value1: bank_code,
       },
     },
   };

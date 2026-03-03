@@ -182,9 +182,12 @@ async function openRegisterFlow() {
   // 은행 목록 미리 로드
   loadBankList();
   setStep(1);
-  document.getElementById("regName").value  = "";
-  document.getElementById("regDob").value   = "";
-  document.getElementById("regEmail").value = "";
+  document.getElementById("regName").value    = "";
+  document.getElementById("regDob").value     = "";
+  document.getElementById("regEmail").value   = "";
+  document.getElementById("regCity").value    = "";
+  document.getElementById("regPostcode").value = "";
+  document.getElementById("regAddress").value = "";
   openModal("modalRegister");
 }
 
@@ -216,13 +219,22 @@ document.getElementById("btnStep1Next").addEventListener("click", () => {
   if (!name)  return showRegErr(1, "예금주 실명을 입력해주세요.");
   if (!dob || !/^\d{8}$/.test(dob)) return showRegErr(1, "생년월일을 8자리로 입력해주세요. (예: 19900101)");
   if (!email) return showRegErr(1, "이메일을 입력해주세요.");
+  const city    = document.getElementById("regCity").value.trim();
+  const postcode = document.getElementById("regPostcode").value.trim();
+  const address = document.getElementById("regAddress").value.trim();
+  if (!city)     return showRegErr(1, "도시를 입력해주세요.");
+  if (!postcode) return showRegErr(1, "우편번호를 입력해주세요.");
+  if (!address)  return showRegErr(1, "주소를 입력해주세요.");
 
   // YYYYMMDD → YYYY-MM-DD 변환 (Airwallex API 형식)
   const dobFormatted = `${dob.slice(0,4)}-${dob.slice(4,6)}-${dob.slice(6,8)}`;
 
-  regData.account_name = name;
-  regData.date_of_birth = dobFormatted;
-  regData.email = email;
+  regData.account_name   = name;
+  regData.date_of_birth  = dobFormatted;
+  regData.email          = email;
+  regData.city           = city;
+  regData.postcode       = postcode;
+  regData.street_address = address;
   setStep(2);
 });
 
