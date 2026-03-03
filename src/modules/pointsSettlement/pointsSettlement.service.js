@@ -155,13 +155,16 @@ export const submitWithdrawalService = async ({ ambassador_id, amount }) => {
     const transfer = await createTransfer({
       ambassadorIdx: ambassador_id,
       payload: {
-        beneficiary_id:   beneficiary.airwallex_beneficiary_id,
-        transfer_amount:  amount,
-        transfer_currency: "KRW",
-        transfer_method:  "LOCAL",
-        reason:    "Ambassador commission payout",
-        reference: `AMB-${ambassador_id}-${Date.now()}`,
-        request_id: requestId,
+        beneficiary_id:      beneficiary.airwallex_beneficiary_id,
+        transfer_amount:     amount,
+        transfer_currency:   "KRW",
+        transfer_method:     "LOCAL",
+        reason:              "professional_business_services",
+        reference:           `AMB-${ambassador_id}-${Date.now()}`,
+        request_id:          requestId,
+        source_currency:     "USD",
+        swift_charge_option: "SHARED",
+        remarks:             "",
       },
     });
     return transfer;
