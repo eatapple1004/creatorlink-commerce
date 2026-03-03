@@ -384,6 +384,17 @@ document.getElementById("btnSettle").addEventListener("click", async () => {
 });
 
 /* ─────────────────────────────────────
+   대시보드 뒤로가기
+───────────────────────────────────── */
+document.getElementById("btnBackDashboard")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  const token = localStorage.getItem("ambassador_token");
+  const url = "https://api.adamthefirstsin.com/iframe/ambassador/dashboard" +
+    (token ? "?token=" + encodeURIComponent(token) : "");
+  window.location.href = url;
+});
+
+/* ─────────────────────────────────────
    초기화
 ───────────────────────────────────── */
 loadSettlement();

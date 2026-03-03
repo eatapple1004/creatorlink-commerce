@@ -26,6 +26,19 @@ body {
   margin: 0 auto;
 }
 
+.backNav {
+  margin-bottom: 8px;
+}
+.backLink {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.backLink:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+
 .pageTitle {
   font-size: 18px;
   font-weight: 600;

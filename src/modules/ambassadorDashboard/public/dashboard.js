@@ -113,9 +113,9 @@ async function loadDashboard() {
 document.getElementById("btnWithdraw")?.addEventListener("click", (e) => {
   e.preventDefault();
   const token = localStorage.getItem("ambassador_token");
-  const url = "https://kr.adamthefirstsin.com/pages/ambassador-settlement" +
+  const url = "https://api.adamthefirstsin.com/iframe/ambassador/settlement" +
     (token ? "?token=" + encodeURIComponent(token) : "");
-  window.top.location.href = url;
+  window.location.href = url;
 });
 
 document.getElementById("btnCustomize")?.addEventListener("click", (e) => {
