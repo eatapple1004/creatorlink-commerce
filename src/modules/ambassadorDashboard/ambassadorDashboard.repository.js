@@ -11,7 +11,14 @@ export const getAmbassadorDashboardData = async (ambassadorId) => {
       apt.total_earned,
       apt.total_withdrawn,
       UPPER(g.code) AS grade_name,
-      g.commission_rate
+      g.commission_rate,
+      COALESCE((
+        SELECT SUM(ow.total_price)
+        FROM order_webhook ow
+        WHERE ow.ambassador_id = ap.id
+          AND ow.paid = true
+          AND ow.created_at >= NOW() - INTERVAL '60 days'
+      ), 0) AS sales_last_60days
     FROM ambassador_profile ap
     JOIN ambassador_points apt ON apt.ambassador_id = ap.id
     LEFT JOIN ambassador_grade g ON g.id = ap.grade_id

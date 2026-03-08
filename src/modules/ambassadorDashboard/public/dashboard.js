@@ -11,6 +11,7 @@ const TIER_ORDER = ["BRONZE", "SILVER", "GOLD", "PLATINUM", "DIAMOND"];
 const state = {
   grade: "BRONZE",
   points: 0,
+  sales: 0,
 };
 
 function formatNumber(n) {
@@ -33,13 +34,13 @@ function calcProgressPercent() {
   // 최고 등급이면 100%
   if (!nextTier) return 100;
   const max = THRESHOLDS[nextTier];
-  const p = Math.max(0, Math.min(1, (state.points - min) / (max - min)));
+  const p = Math.max(0, Math.min(1, (state.sales - min) / (max - min)));
   return p * 100;
 }
 
 function render() {
   document.getElementById("gradeLabel").textContent = `${state.grade} AMBASSADOR`;
-  document.getElementById("pointsValue").textContent = formatNumber(state.points);
+  document.getElementById("salesValue").textContent = formatNumber(state.sales);
 
   setActiveTier();
 
@@ -49,7 +50,7 @@ function render() {
 }
 
 function showAuthError(msg) {
-  const el = document.getElementById("pointsValue");
+  const el = document.getElementById("salesValue");
   if (el) el.textContent = "-";
   const grade = document.getElementById("gradeLabel");
   if (grade) grade.textContent = msg;
@@ -102,6 +103,7 @@ async function loadDashboard() {
 
     state.grade  = data.grade_name || "BRONZE";
     state.points = parseFloat(data.current_points) || 0;
+    state.sales  = parseFloat(data.sales_last_60days) || 0;
 
     render();
   } catch (err) {
