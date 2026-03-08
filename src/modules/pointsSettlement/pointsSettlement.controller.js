@@ -101,6 +101,11 @@ export async function submitWithdrawal(req, res) {
     res.json({ success: true, result });
   } catch (err) {
     console.error("❌ submitWithdrawal error:", err.message);
+    if (err.message === "SETTLEMENT_DISABLED") {
+      return res.status(403).json({
+        message: "Settlement is currently disabled.",
+      });
+    }
     if (err.message === "BELOW_MINIMUM_AMOUNT") {
       return res.status(400).json({
         message: `최소 정산 금액은 ${(err.minimum ?? 2000).toLocaleString()}pts 입니다.`,

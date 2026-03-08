@@ -13,6 +13,7 @@ import {
 } from "../../repositories/points.repository.js";
 import { registerBeneficiary } from "../../services/airwallexBeneficiary.service.js";
 import { createTransfer } from "../../services/airwallexTransfer.service.js";
+import { getSetting } from "../admin/admin.repository.js";
 
 const PENDING_STATUSES = new Set(["CREATED", "INITIATED", "PENDING", "PROCESSING", "SCHEDULED"]);
 
@@ -111,6 +112,12 @@ export const registerBeneficiaryService = async (ambassadorId, {
  * 4) 실패 시 포인트 복원 (보상 트랜잭션)
  */
 export const submitWithdrawalService = async ({ ambassador_id, amount }) => {
+  // 0. 정산 기능 활성화 여부 확인
+  const settlementEnabled = await getSetting("settlement_enabled");
+  if (settlementEnabled === "false") {
+    throw new Error("SETTLEMENT_DISABLED");
+  }
+
   // 1. 포인트 확인
   const record = await findPointsByAmbassador(ambassador_id);
   if (!record) throw new Error("POINTS_RECORD_NOT_FOUND");

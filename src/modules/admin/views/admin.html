@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin | Ambassador Management</title>
+  <link rel="stylesheet" href="/admin/static/admin.css" />
+</head>
+<body>
+
+  <!-- Login Screen -->
+  <div id="loginScreen" class="loginWrap">
+    <div class="loginBox">
+      <h1>Admin Login</h1>
+      <input type="password" id="loginPw" placeholder="Password" />
+      <button id="btnLogin">Login</button>
+      <p class="loginErr" id="loginErr"></p>
+    </div>
+  </div>
+
+  <!-- Admin Dashboard -->
+  <main class="page hidden" id="adminMain">
+    <h1 class="pageTitle">Ambassador Admin</h1>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" data-tab="dashboard">Dashboard</button>
+      <button class="tab" data-tab="transfers">Transfers</button>
+      <button class="tab" data-tab="points">Points</button>
+    </div>
+
+    <!-- Tab 1: Dashboard -->
+    <div class="tabContent active" id="tab-dashboard">
+      <!-- Settlement Toggle -->
+      <div class="card">
+        <div class="toggleRow">
+          <span class="toggleLabel">Settlement (On/Off)</span>
+          <label class="toggle">
+            <input type="checkbox" id="settlementToggle" />
+            <span class="slider"></span>
+          </label>
+          <span id="settlementStatus" style="font-size:12px;color:var(--muted);">-</span>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="statsRow" id="statsRow">
+        <div class="statCard">
+          <p class="statLabel">Total Ambassadors</p>
+          <p class="statValue" id="statAmbassadors">-</p>
+        </div>
+        <div class="statCard">
+          <p class="statLabel">Total Earned (All)</p>
+          <p class="statValue" id="statEarned">-</p>
+        </div>
+        <div class="statCard">
+          <p class="statLabel">Total Withdrawn (All)</p>
+          <p class="statValue" id="statWithdrawn">-</p>
+        </div>
+        <div class="statCard">
+          <p class="statLabel">Total Current Points</p>
+          <p class="statValue" id="statCurrent">-</p>
+        </div>
+      </div>
+
+      <!-- Ambassador List -->
+      <div class="card">
+        <p class="cardLabel">Ambassadors</p>
+        <div class="searchBar">
+          <input type="text" id="ambSearch" placeholder="Search by ID, email, or name..." />
+          <button id="btnAmbSearch">Search</button>
+        </div>
+        <table class="dataTable">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Grade</th>
+              <th>Current Pts</th>
+              <th>Total Earned</th>
+              <th>Total Withdrawn</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="ambBody">
+            <tr><td colspan="8" class="emptyMsg">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab 2: Transfers -->
+    <div class="tabContent" id="tab-transfers">
+      <div class="card">
+        <p class="cardLabel">Transfer History</p>
+        <div class="searchBar">
+          <input type="text" id="transferSearch" placeholder="Filter by Ambassador ID..." />
+          <button id="btnTransferSearch">Search</button>
+          <button id="btnTransferClear" style="background:transparent;color:var(--muted);border:1px solid var(--line);">Clear</button>
+        </div>
+        <table class="dataTable">
+          <thead>
+            <tr>
+              <th>IDX</th>
+              <th>Ambassador</th>
+              <th>Email</th>
+              <th>Amount</th>
+              <th>Currency</th>
+              <th>Status</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="transferBody">
+            <tr><td colspan="7" class="emptyMsg">Loading...</td></tr>
+          </tbody>
+        </table>
+        <div class="pagination">
+          <button id="transferPrev" disabled>Prev</button>
+          <span id="transferPageInfo" style="font-size:12px;line-height:30px;">-</span>
+          <button id="transferNext" disabled>Next</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3: Points Management -->
+    <div class="tabContent" id="tab-points">
+      <!-- Ambassador Lookup -->
+      <div class="card">
+        <p class="cardLabel">Ambassador Lookup</p>
+        <div class="searchBar">
+          <input type="text" id="pointsAmbId" placeholder="Ambassador ID" />
+          <button id="btnPointsLookup">Lookup</button>
+        </div>
+        <div id="pointsDetail" class="hidden">
+          <div class="detailPanel">
+            <h3 id="pdName">-</h3>
+            <div class="detailGrid">
+              <div class="detailItem"><span class="dlabel">ID</span><br/><span class="dvalue" id="pdId">-</span></div>
+              <div class="detailItem"><span class="dlabel">Email</span><br/><span class="dvalue" id="pdEmail">-</span></div>
+              <div class="detailItem"><span class="dlabel">PayPal</span><br/><span class="dvalue" id="pdPaypal">-</span></div>
+              <div class="detailItem"><span class="dlabel">Grade</span><br/><span class="dvalue" id="pdGrade">-</span></div>
+              <div class="detailItem"><span class="dlabel">Commission</span><br/><span class="dvalue" id="pdCommission">-</span></div>
+              <div class="detailItem"><span class="dlabel">Referral Code</span><br/><span class="dvalue" id="pdReferral">-</span></div>
+              <div class="detailItem"><span class="dlabel">Current Points</span><br/><span class="dvalue" id="pdCurrent">-</span></div>
+              <div class="detailItem"><span class="dlabel">Total Earned</span><br/><span class="dvalue" id="pdEarned">-</span></div>
+              <div class="detailItem"><span class="dlabel">Total Withdrawn</span><br/><span class="dvalue" id="pdWithdrawn">-</span></div>
+            </div>
+          </div>
+
+          <!-- Point adjustment form -->
+          <div class="card">
+            <p class="cardLabel">Adjust Points</p>
+            <div class="adjustForm">
+              <div class="field">
+                <label>Type</label>
+                <select id="adjustType">
+                  <option value="add">Add (+)</option>
+                  <option value="deduct">Deduct (-)</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Amount</label>
+                <input type="number" id="adjustAmount" placeholder="0" min="1" />
+              </div>
+              <div class="field" style="flex:1;">
+                <label>Description</label>
+                <input type="text" id="adjustDesc" placeholder="Reason for adjustment" />
+              </div>
+              <button class="btnAdjust" id="btnAdjust">Apply</button>
+            </div>
+            <p class="adjustMsg hidden" id="adjustMsg"></p>
+          </div>
+
+          <!-- Transaction history for this ambassador -->
+          <div class="card">
+            <p class="cardLabel">Transaction History</p>
+            <table class="dataTable">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Balance After</th>
+                  <th>Reference</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody id="txBody">
+                <tr><td colspan="6" class="emptyMsg">-</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/admin/static/admin.js"></script>
+</body>
+</html>

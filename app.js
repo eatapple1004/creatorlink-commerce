@@ -20,6 +20,7 @@ import airwallexWebhookRoutes     from './src/routes/airwallexWebhook.routes.js'
 
 import ambassadorDashboardRoutes  from "./src/modules/ambassadorDashboard/ambassadorDashboard.routes.js";
 import pointsSettlementRoutes     from "./src/modules/pointsSettlement/pointsSettlement.routes.js";
+import adminRoutes                from "./src/modules/admin/admin.routes.js";
 
 
 import pool from "./src/config/db.js";   // ✅ import로 변경
@@ -76,6 +77,8 @@ app.use('/api/airwallex', airwallexWebhookRoutes);
 
 app.use("/iframe/ambassador", ambassadorDashboardRoutes);
 app.use("/iframe/ambassador", pointsSettlementRoutes);
+
+app.use("/admin", adminRoutes);
 
 app.listen(process.env.PORT || 8080, () => {
     console.log(`✅ Server running on port ${process.env.PORT}`);
