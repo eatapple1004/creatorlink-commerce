@@ -29,8 +29,8 @@ router.get("/api/stats",               adminAuth, ctrl.getStats);
 router.get("/api/ambassadors",         adminAuth, ctrl.listAmbassadors);
 router.get("/api/ambassadors/:id",     adminAuth, ctrl.getAmbassador);
 router.get("/api/ambassadors/:id/transactions", adminAuth, ctrl.getTransactions);
-router.get("/api/transfers",           adminAuth, ctrl.getTransfers);
 router.get("/api/transfers/export",    adminAuth, ctrl.exportTransfers);
+router.get("/api/transfers",           adminAuth, ctrl.getTransfers);
 router.post("/api/points/adjust",      adminAuth, ctrl.adjustPoints);
 
 export default router;
