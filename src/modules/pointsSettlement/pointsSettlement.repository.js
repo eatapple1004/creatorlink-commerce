@@ -1,6 +1,17 @@
 import pool from "../../config/db.js";
 
 /**
+ * 개별 앰버서더 정산 활성화 여부
+ */
+export const getAmbassadorSettlementEnabled = async (ambassadorId) => {
+  const { rows } = await pool.query(
+    "SELECT settlement_enabled FROM ambassador_profile WHERE id = $1",
+    [ambassadorId]
+  );
+  return rows[0]?.settlement_enabled ?? true;
+};
+
+/**
  * 포인트 요약 (현재 포인트 + 잠금 포인트)
  */
 export const getSettlementSummary = async (ambassadorId) => {

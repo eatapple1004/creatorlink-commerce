@@ -106,6 +106,11 @@ export async function submitWithdrawal(req, res) {
         message: "Settlement is currently disabled.",
       });
     }
+    if (err.message === "AMBASSADOR_SETTLEMENT_BLOCKED") {
+      return res.status(403).json({
+        message: "Your settlement has been temporarily blocked. Please contact support.",
+      });
+    }
     if (err.message === "BELOW_MINIMUM_AMOUNT") {
       return res.status(400).json({
         message: `최소 정산 금액은 ${(err.minimum ?? 2000).toLocaleString()}pts 입니다.`,

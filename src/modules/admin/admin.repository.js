@@ -34,6 +34,7 @@ export const searchAmbassadors = async ({ query, limit = 20, offset = 0 }) => {
   const sql = `
     SELECT
       ap.id, ap.name, ap.email, ap.referral_code, ap.status,
+      ap.settlement_enabled,
       apt.current_points, apt.total_earned, apt.total_withdrawn,
       UPPER(g.code) AS grade_name
     FROM ambassador_profile ap
@@ -47,11 +48,19 @@ export const searchAmbassadors = async ({ query, limit = 20, offset = 0 }) => {
   return rows;
 };
 
+export const toggleAmbassadorSettlement = async (id, enabled) => {
+  const { rows } = await pool.query(
+    "UPDATE ambassador_profile SET settlement_enabled = $1 WHERE id = $2 RETURNING id, settlement_enabled",
+    [enabled, id]
+  );
+  return rows[0] || null;
+};
+
 export const getAmbassadorById = async (id) => {
   const sql = `
     SELECT
       ap.id, ap.name, ap.email, ap.paypal_email, ap.referral_code,
-      ap.status, ap.country_code, ap.created_at,
+      ap.status, ap.country_code, ap.created_at, ap.settlement_enabled,
       apt.current_points, apt.total_earned, apt.total_withdrawn,
       UPPER(g.code) AS grade_name, g.commission_rate
     FROM ambassador_profile ap

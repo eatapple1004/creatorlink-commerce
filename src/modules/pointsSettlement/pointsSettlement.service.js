@@ -112,10 +112,17 @@ export const registerBeneficiaryService = async (ambassadorId, {
  * 4) 실패 시 포인트 복원 (보상 트랜잭션)
  */
 export const submitWithdrawalService = async ({ ambassador_id, amount }) => {
-  // 0. 정산 기능 활성화 여부 확인
+  // 0-1. 전체 정산 기능 활성화 여부 확인
   const settlementEnabled = await getSetting("settlement_enabled");
   if (settlementEnabled === "false") {
     throw new Error("SETTLEMENT_DISABLED");
+  }
+
+  // 0-2. 개별 앰버서더 정산 차단 여부 확인
+  const { getAmbassadorSettlementEnabled } = await import("./pointsSettlement.repository.js");
+  const ambSettlement = await getAmbassadorSettlementEnabled(ambassador_id);
+  if (ambSettlement === false) {
+    throw new Error("AMBASSADOR_SETTLEMENT_BLOCKED");
   }
 
   // 1. 포인트 확인

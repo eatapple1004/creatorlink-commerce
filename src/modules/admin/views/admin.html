@@ -81,10 +81,11 @@
               <th>Total Earned</th>
               <th>Total Withdrawn</th>
               <th>Status</th>
+              <th>Settlement</th>
             </tr>
           </thead>
           <tbody id="ambBody">
-            <tr><td colspan="8" class="emptyMsg">Loading...</td></tr>
+            <tr><td colspan="9" class="emptyMsg">Loading...</td></tr>
           </tbody>
         </table>
       </div>
@@ -149,6 +150,13 @@
               <div class="detailItem"><span class="dlabel">Grade</span><br/><span class="dvalue" id="pdGrade">-</span></div>
               <div class="detailItem"><span class="dlabel">Commission</span><br/><span class="dvalue" id="pdCommission">-</span></div>
               <div class="detailItem"><span class="dlabel">Referral Code</span><br/><span class="dvalue" id="pdReferral">-</span></div>
+              <div class="detailItem">
+                <span class="dlabel">Settlement</span><br/>
+                <label class="toggle" style="margin-top:4px;">
+                  <input type="checkbox" id="pdSettlementToggle" />
+                  <span class="slider"></span>
+                </label>
+              </div>
               <div class="detailItem"><span class="dlabel">Current Points</span><br/><span class="dvalue" id="pdCurrent">-</span></div>
               <div class="detailItem"><span class="dlabel">Total Earned</span><br/><span class="dvalue" id="pdEarned">-</span></div>
               <div class="detailItem"><span class="dlabel">Total Withdrawn</span><br/><span class="dvalue" id="pdWithdrawn">-</span></div>

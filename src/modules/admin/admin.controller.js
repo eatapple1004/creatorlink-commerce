@@ -44,6 +44,21 @@ export async function listAmbassadors(req, res) {
   }
 }
 
+export async function toggleAmbassadorSettlement(req, res) {
+  try {
+    const id = Number(req.params.id);
+    const { enabled } = req.body;
+    const result = await service.toggleAmbassadorSettlement(id, !!enabled);
+    res.json({ success: true, result });
+  } catch (err) {
+    if (err.message === "AMBASSADOR_NOT_FOUND") {
+      return res.status(404).json({ message: "Ambassador not found" });
+    }
+    console.error("admin toggleAmbassadorSettlement error:", err.message);
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
 export async function getAmbassador(req, res) {
   try {
     const id = Number(req.params.id);

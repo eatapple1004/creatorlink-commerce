@@ -19,6 +19,12 @@ export const searchAmbassadors = async (query, limit, offset) => {
   return await repo.searchAmbassadors({ query, limit, offset });
 };
 
+export const toggleAmbassadorSettlement = async (id, enabled) => {
+  const result = await repo.toggleAmbassadorSettlement(id, enabled);
+  if (!result) throw new Error("AMBASSADOR_NOT_FOUND");
+  return result;
+};
+
 export const getAmbassadorDetail = async (id) => {
   const ambassador = await repo.getAmbassadorById(id);
   if (!ambassador) throw new Error("AMBASSADOR_NOT_FOUND");

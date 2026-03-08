@@ -90,8 +90,32 @@ async function loadAmbassadors(query) {
         <td>${fmt(a.total_earned)}</td>
         <td>${fmt(a.total_withdrawn)}</td>
         <td>${a.status || "-"}</td>
+        <td>
+          <label class="toggle">
+            <input type="checkbox" class="ambSettlementToggle" data-amb-id="${a.id}" ${a.settlement_enabled ? "checked" : ""} />
+            <span class="slider"></span>
+          </label>
+        </td>
       </tr>
     `).join("");
+
+    // Settlement toggle per ambassador
+    tbody.querySelectorAll(".ambSettlementToggle").forEach((toggle) => {
+      toggle.addEventListener("change", async (e) => {
+        const ambId = e.target.dataset.ambId;
+        try {
+          await apiFetch(`${API}/ambassadors/${ambId}/settlement`, {
+            method: "PUT",
+            body: JSON.stringify({ enabled: e.target.checked }),
+          });
+        } catch (err) {
+          if (err.message !== "AUTH") {
+            e.target.checked = !e.target.checked;
+            alert("Failed to update");
+          }
+        }
+      });
+    });
 
     tbody.querySelectorAll(".clickable").forEach((el) => {
       el.addEventListener("click", () => {
@@ -355,6 +379,7 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("pdGrade").textContent = a.grade_name || "-";
       document.getElementById("pdCommission").textContent = a.commission_rate ? `${a.commission_rate}%` : "-";
       document.getElementById("pdReferral").textContent = a.referral_code || "-";
+      document.getElementById("pdSettlementToggle").checked = a.settlement_enabled !== false;
       document.getElementById("pdCurrent").textContent = fmt(a.current_points) + " pts";
       document.getElementById("pdEarned").textContent = fmt(a.total_earned) + " pts";
       document.getElementById("pdWithdrawn").textContent = fmt(a.total_withdrawn) + " pts";
@@ -370,6 +395,22 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   document.getElementById("pointsAmbId").addEventListener("keydown", (e) => {
     if (e.key === "Enter") document.getElementById("btnPointsLookup").click();
+  });
+
+  // Per-ambassador settlement toggle (Points tab detail)
+  document.getElementById("pdSettlementToggle").addEventListener("change", async (e) => {
+    if (!currentAmbId) return;
+    try {
+      await apiFetch(`${API}/ambassadors/${currentAmbId}/settlement`, {
+        method: "PUT",
+        body: JSON.stringify({ enabled: e.target.checked }),
+      });
+    } catch (err) {
+      if (err.message !== "AUTH") {
+        e.target.checked = !e.target.checked;
+        alert("Failed to update settlement status");
+      }
+    }
   });
 
   // Point adjustment
