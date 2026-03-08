@@ -232,6 +232,41 @@ document.getElementById("btnTransferSearch").addEventListener("click", () => {
   transferPage = 0;
   loadTransfers();
 });
+
+/* ── Excel Export ── */
+document.getElementById("btnExportExcel").addEventListener("click", async () => {
+  const params = new URLSearchParams();
+  const startDate = document.getElementById("exportStart").value;
+  const endDate = document.getElementById("exportEnd").value;
+  if (startDate) params.set("start_date", startDate);
+  if (endDate) params.set("end_date", endDate);
+  if (transferFilter) params.set("ambassador_id", transferFilter);
+
+  const btn = document.getElementById("btnExportExcel");
+  btn.disabled = true;
+  btn.textContent = "Downloading...";
+
+  try {
+    const res = await fetch(`${API}/transfers/export?${params}`, { credentials: "include" });
+    if (res.status === 401 || res.status === 403) { showLogin(); return; }
+    if (!res.ok) { alert("Export failed"); return; }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `transfers_${new Date().toISOString().slice(0,10).replace(/-/g,"")}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch {
+    alert("Download failed");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Excel Download";
+  }
+});
 document.getElementById("btnTransferClear").addEventListener("click", () => {
   document.getElementById("transferSearch").value = "";
   transferFilter = null;

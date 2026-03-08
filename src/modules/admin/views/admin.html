@@ -99,6 +99,13 @@
           <button id="btnTransferSearch">Search</button>
           <button id="btnTransferClear" style="background:transparent;color:var(--muted);border:1px solid var(--line);">Clear</button>
         </div>
+        <div class="exportBar" style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
+          <label style="font-size:11px;color:var(--muted);">From</label>
+          <input type="date" id="exportStart" style="padding:6px 10px;border:1px solid var(--line);border-radius:var(--radius);font-size:12px;" />
+          <label style="font-size:11px;color:var(--muted);">To</label>
+          <input type="date" id="exportEnd" style="padding:6px 10px;border:1px solid var(--line);border-radius:var(--radius);font-size:12px;" />
+          <button id="btnExportExcel" style="padding:8px 16px;background:#2e7d32;color:#fff;border:none;border-radius:var(--radius);font-size:12px;font-weight:600;cursor:pointer;">Excel Download</button>
+        </div>
         <table class="dataTable">
           <thead>
             <tr>

@@ -1,4 +1,5 @@
 import pool from "../../config/db.js";
+import * as XLSX from "xlsx";
 import * as repo from "./admin.repository.js";
 
 export const getSettings = async () => {
@@ -34,6 +35,55 @@ export const getTransfers = async ({ ambassadorId, limit, offset }) => {
 
 export const getTransactions = async ({ ambassadorId, limit, offset }) => {
   return await repo.getTransactions({ ambassadorId, limit, offset });
+};
+
+export const exportTransfersExcel = async ({ ambassadorId, startDate, endDate }) => {
+  const rows = await repo.getTransfersForExport({ ambassadorId, startDate, endDate });
+
+  const data = rows.map((r) => ({
+    "IDX": r.idx,
+    "Ambassador ID": r.ambassador_idx,
+    "Name": r.ambassador_name || "",
+    "Email": r.ambassador_email || "",
+    "Transfer Amount": parseFloat(r.transfer_amount) || 0,
+    "Transfer Currency": r.transfer_currency || "",
+    "Source Amount": r.source_amount ? parseFloat(r.source_amount) : "",
+    "Source Currency": r.source_currency || "",
+    "Status": r.status || "",
+    "Transfer Method": r.transfer_method || "",
+    "Reference": r.reference || "",
+    "Airwallex Transfer ID": r.airwallex_transfer_id || "",
+    "Short Reference": r.airwallex_short_reference_id || "",
+    "Reason": r.reason || "",
+    "Created At": r.created_at ? new Date(r.created_at).toISOString().slice(0, 19).replace("T", " ") : "",
+    "Updated At": r.updated_at ? new Date(r.updated_at).toISOString().slice(0, 19).replace("T", " ") : "",
+  }));
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(data);
+
+  // Column widths
+  ws["!cols"] = [
+    { wch: 6 },  // IDX
+    { wch: 12 }, // Ambassador ID
+    { wch: 16 }, // Name
+    { wch: 24 }, // Email
+    { wch: 14 }, // Transfer Amount
+    { wch: 10 }, // Transfer Currency
+    { wch: 14 }, // Source Amount
+    { wch: 10 }, // Source Currency
+    { wch: 12 }, // Status
+    { wch: 12 }, // Transfer Method
+    { wch: 24 }, // Reference
+    { wch: 36 }, // Airwallex Transfer ID
+    { wch: 18 }, // Short Reference
+    { wch: 20 }, // Reason
+    { wch: 20 }, // Created At
+    { wch: 20 }, // Updated At
+  ];
+
+  XLSX.utils.book_append_sheet(wb, ws, "Transfers");
+  return XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
 };
 
 export const adjustPoints = async ({ ambassadorId, amount, description }) => {

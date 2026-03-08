@@ -84,6 +84,26 @@ export async function getTransactions(req, res) {
   }
 }
 
+export async function exportTransfers(req, res) {
+  try {
+    const ambassadorId = req.query.ambassador_id ? Number(req.query.ambassador_id) : null;
+    const startDate = req.query.start_date || null;
+    const endDate = req.query.end_date || null;
+
+    const buffer = await service.exportTransfersExcel({ ambassadorId, startDate, endDate });
+
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    const filename = `transfers_${dateStr}.xlsx`;
+
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.send(buffer);
+  } catch (err) {
+    console.error("admin exportTransfers error:", err.message);
+    res.status(500).json({ message: "Export failed" });
+  }
+}
+
 export async function adjustPoints(req, res) {
   try {
     const { ambassador_id, amount, description } = req.body;

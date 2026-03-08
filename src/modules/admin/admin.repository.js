@@ -110,6 +110,56 @@ export const getTransferCount = async ({ ambassadorId }) => {
   return rows[0]?.count ?? 0;
 };
 
+// ── Transfers for Excel export (no pagination) ──
+
+export const getTransfersForExport = async ({ ambassadorId, startDate, endDate }) => {
+  const conditions = [];
+  const params = [];
+  let idx = 1;
+
+  if (ambassadorId) {
+    conditions.push(`t.ambassador_idx = $${idx++}`);
+    params.push(ambassadorId);
+  }
+  if (startDate) {
+    conditions.push(`t.created_at >= $${idx++}`);
+    params.push(startDate);
+  }
+  if (endDate) {
+    conditions.push(`t.created_at < $${idx++}::date + INTERVAL '1 day'`);
+    params.push(endDate);
+  }
+
+  const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+  const sql = `
+    SELECT
+      t.idx,
+      t.ambassador_idx,
+      ap.name AS ambassador_name,
+      ap.email AS ambassador_email,
+      t.transfer_amount,
+      t.transfer_currency,
+      t.source_amount,
+      t.source_currency,
+      t.status,
+      t.reference,
+      t.airwallex_transfer_id,
+      t.airwallex_short_reference_id,
+      t.transfer_method,
+      t.reason,
+      t.created_at,
+      t.updated_at
+    FROM airwallex_transfer t
+    LEFT JOIN ambassador_profile ap ON ap.id = t.ambassador_idx
+    ${where}
+    ORDER BY t.created_at DESC
+  `;
+
+  const { rows } = await pool.query(sql, params);
+  return rows;
+};
+
 // ── Transactions (per ambassador) ──
 
 export const getTransactions = async ({ ambassadorId, limit = 30, offset = 0 }) => {
