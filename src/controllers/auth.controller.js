@@ -8,10 +8,10 @@ import { registerUserService, loginUserService } from "../services/auth.service.
  */
 export const registerUser = async (req, res) => {
   try {
-    const { name, email, password, paypal_email, currency = "USD", country_code = "US" } = req.body;
+    const { name, email, password, paypal_email = "", currency = "USD", country_code = "US" } = req.body;
 
     // 필수값 검증
-    if (!name || !email || !password || !paypal_email) {
+    if (!name || !email || !password) {
       return res.status(400).json({ message: "필수 입력값이 누락되었습니다." });
     }
 

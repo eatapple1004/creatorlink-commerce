@@ -129,11 +129,23 @@
   var btn = document.getElementById('amb-login-btn');
   var errorEl = document.getElementById('amb-login-error');
 
-  // 이미 로그인된 경우 리다이렉트
+  // 이미 로그인된 경우 토큰 유효성 검증 후 리다이렉트
   var existingToken = localStorage.getItem('ambassador_token');
   if (existingToken) {
-    window.location.href = REDIRECT_PAGE;
-    return;
+    fetch(API_ORIGIN + '/api/auth/profile', {
+      headers: { 'Authorization': 'Bearer ' + existingToken }
+    })
+    .then(function (res) {
+      if (res.ok) {
+        window.location.href = REDIRECT_PAGE;
+      } else {
+        // 토큰 만료/무효 → 삭제하고 로그인 폼 표시
+        localStorage.removeItem('ambassador_token');
+      }
+    })
+    .catch(function () {
+      localStorage.removeItem('ambassador_token');
+    });
   }
 
   form.addEventListener('submit', function () {
