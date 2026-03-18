@@ -1,0 +1,315 @@
+{% comment %}
+  앰버서더 회원가입 섹션
+  Shopify Admin > Themes > Edit code > sections 폴더에 추가
+  파일명: ambassador-signup.liquid
+{% endcomment %}
+
+<style>
+  .amb-auth-wrap {
+    max-width: 420px;
+    margin: 60px auto;
+    padding: 40px 24px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  .amb-auth-wrap h2 {
+    text-align: center;
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #111;
+  }
+  .amb-auth-wrap .amb-subtitle {
+    text-align: center;
+    font-size: 14px;
+    color: #888;
+    margin-bottom: 32px;
+  }
+  .amb-form-group {
+    margin-bottom: 20px;
+  }
+  .amb-form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 6px;
+  }
+  .amb-form-group input,
+  .amb-form-group select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #111;
+    background: #fafafa;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+  }
+  .amb-form-group input:focus,
+  .amb-form-group select:focus {
+    outline: none;
+    border-color: #111;
+    background: #fff;
+  }
+  .amb-form-group .amb-hint {
+    font-size: 11px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .amb-btn-primary {
+    width: 100%;
+    padding: 14px;
+    background: #111;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .amb-btn-primary:hover {
+    background: #333;
+  }
+  .amb-btn-primary:disabled {
+    background: #999;
+    cursor: not-allowed;
+  }
+  .amb-error-msg {
+    display: none;
+    background: #fff0f0;
+    color: #c00;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  .amb-success-msg {
+    display: none;
+    background: #f0fff4;
+    color: #1a7f37;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  .amb-link-row {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 13px;
+    color: #888;
+  }
+  .amb-link-row a {
+    color: #111;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .amb-link-row a:hover {
+    text-decoration: underline;
+  }
+  .amb-form-row {
+    display: flex;
+    gap: 12px;
+  }
+  .amb-form-row .amb-form-group {
+    flex: 1;
+  }
+</style>
+
+<div class="amb-auth-wrap">
+  <h2>Ambassador Sign Up</h2>
+  <p class="amb-subtitle">Create your ambassador account</p>
+
+  <div id="amb-signup-error" class="amb-error-msg"></div>
+  <div id="amb-signup-success" class="amb-success-msg"></div>
+
+  <form id="amb-signup-form" onsubmit="return false;">
+    <div class="amb-form-group">
+      <label for="amb-name">Name</label>
+      <input type="text" id="amb-name" name="name" placeholder="Your full name" required autocomplete="name" />
+    </div>
+
+    <div class="amb-form-group">
+      <label for="amb-email">Email</label>
+      <input type="email" id="amb-email" name="email" placeholder="you@example.com" required autocomplete="email" />
+    </div>
+
+    <div class="amb-form-group">
+      <label for="amb-password">Password</label>
+      <input type="password" id="amb-password" name="password" placeholder="At least 8 characters" required minlength="8" autocomplete="new-password" />
+    </div>
+
+    <div class="amb-form-group">
+      <label for="amb-password-confirm">Confirm Password</label>
+      <input type="password" id="amb-password-confirm" name="password_confirm" placeholder="Re-enter your password" required minlength="8" autocomplete="new-password" />
+    </div>
+
+    <div class="amb-form-group">
+      <label for="amb-paypal-email">PayPal Email</label>
+      <input type="email" id="amb-paypal-email" name="paypal_email" placeholder="paypal@example.com" required autocomplete="email" />
+      <p class="amb-hint">Used for commission payouts</p>
+    </div>
+
+    <div class="amb-form-row">
+      <div class="amb-form-group">
+        <label for="amb-country">Country</label>
+        <select id="amb-country" name="country_code">
+          <option value="US">United States</option>
+          <option value="KR">South Korea</option>
+          <option value="JP">Japan</option>
+          <option value="CN">China</option>
+          <option value="GB">United Kingdom</option>
+          <option value="CA">Canada</option>
+          <option value="AU">Australia</option>
+          <option value="DE">Germany</option>
+          <option value="FR">France</option>
+          <option value="SG">Singapore</option>
+          <option value="HK">Hong Kong</option>
+        </select>
+      </div>
+
+      <div class="amb-form-group">
+        <label for="amb-currency">Currency</label>
+        <select id="amb-currency" name="currency">
+          <option value="USD">USD</option>
+          <option value="KRW">KRW</option>
+          <option value="JPY">JPY</option>
+          <option value="CNY">CNY</option>
+          <option value="GBP">GBP</option>
+          <option value="CAD">CAD</option>
+          <option value="AUD">AUD</option>
+          <option value="EUR">EUR</option>
+          <option value="SGD">SGD</option>
+          <option value="HKD">HKD</option>
+        </select>
+      </div>
+    </div>
+
+    <button type="submit" id="amb-signup-btn" class="amb-btn-primary">Create Account</button>
+  </form>
+
+  <div class="amb-link-row">
+    Already have an account? <a href="/pages/ambassador-login">Sign In</a>
+  </div>
+</div>
+
+<script>
+(function () {
+  var API_ORIGIN = 'https://api.adamthefirstsin.com';
+
+  var form = document.getElementById('amb-signup-form');
+  var btn = document.getElementById('amb-signup-btn');
+  var errorEl = document.getElementById('amb-signup-error');
+  var successEl = document.getElementById('amb-signup-success');
+
+  // 이미 로그인된 경우 리다이렉트
+  var existingToken = localStorage.getItem('ambassador_token');
+  if (existingToken) {
+    window.location.href = '/pages/ambassador-settlement';
+    return;
+  }
+
+  form.addEventListener('submit', function () {
+    var name = document.getElementById('amb-name').value.trim();
+    var email = document.getElementById('amb-email').value.trim();
+    var password = document.getElementById('amb-password').value;
+    var passwordConfirm = document.getElementById('amb-password-confirm').value;
+    var paypalEmail = document.getElementById('amb-paypal-email').value.trim();
+    var countryCode = document.getElementById('amb-country').value;
+    var currency = document.getElementById('amb-currency').value;
+
+    errorEl.style.display = 'none';
+    successEl.style.display = 'none';
+
+    // 비밀번호 확인
+    if (password !== passwordConfirm) {
+      errorEl.textContent = 'Passwords do not match.';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    if (password.length < 8) {
+      errorEl.textContent = 'Password must be at least 8 characters.';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    if (!name || !email || !paypalEmail) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Creating account...';
+
+    fetch(API_ORIGIN + '/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: name,
+        email: email,
+        password: password,
+        paypal_email: paypalEmail,
+        currency: currency,
+        country_code: countryCode
+      })
+    })
+    .then(function (res) {
+      return res.json().then(function (data) {
+        return { ok: res.ok, status: res.status, data: data };
+      });
+    })
+    .then(function (result) {
+      if (!result.ok) {
+        throw new Error(result.data.message || 'Registration failed');
+      }
+
+      // 회원가입 성공 → 자동 로그인
+      return fetch(API_ORIGIN + '/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, password: password })
+      });
+    })
+    .then(function (res) {
+      if (!res) return;
+      return res.json().then(function (data) {
+        return { ok: res.ok, data: data };
+      });
+    })
+    .then(function (result) {
+      if (!result) return;
+
+      if (result.ok && result.data.token) {
+        // 자동 로그인 성공 → 정산 페이지로 이동
+        localStorage.setItem('ambassador_token', result.data.token);
+        successEl.textContent = 'Account created! Redirecting...';
+        successEl.style.display = 'block';
+        setTimeout(function () {
+          window.location.href = '/pages/ambassador-settlement?token=' + encodeURIComponent(result.data.token);
+        }, 1000);
+      } else {
+        // 자동 로그인 실패 → 로그인 페이지로 이동
+        successEl.textContent = 'Account created! Redirecting to login...';
+        successEl.style.display = 'block';
+        setTimeout(function () {
+          window.location.href = '/pages/ambassador-login';
+        }, 1500);
+      }
+    })
+    .catch(function (err) {
+      errorEl.textContent = err.message;
+      errorEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Create Account';
+    });
+  });
+})();
+</script>
+
+{% schema %}
+{
+  "name": "Ambassador Signup",
+  "settings": []
+}
+{% endschema %}

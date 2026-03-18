@@ -1,0 +1,183 @@
+{% comment %}
+  앰버서더 로그인 섹션
+  Shopify Admin > Themes > Edit code > sections 폴더에 추가
+  파일명: ambassador-login.liquid
+{% endcomment %}
+
+<style>
+  .amb-auth-wrap {
+    max-width: 420px;
+    margin: 60px auto;
+    padding: 40px 24px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  .amb-auth-wrap h2 {
+    text-align: center;
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #111;
+  }
+  .amb-auth-wrap .amb-subtitle {
+    text-align: center;
+    font-size: 14px;
+    color: #888;
+    margin-bottom: 32px;
+  }
+  .amb-form-group {
+    margin-bottom: 20px;
+  }
+  .amb-form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 6px;
+  }
+  .amb-form-group input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #111;
+    background: #fafafa;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+  }
+  .amb-form-group input:focus {
+    outline: none;
+    border-color: #111;
+    background: #fff;
+  }
+  .amb-btn-primary {
+    width: 100%;
+    padding: 14px;
+    background: #111;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .amb-btn-primary:hover {
+    background: #333;
+  }
+  .amb-btn-primary:disabled {
+    background: #999;
+    cursor: not-allowed;
+  }
+  .amb-error-msg {
+    display: none;
+    background: #fff0f0;
+    color: #c00;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  .amb-link-row {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 13px;
+    color: #888;
+  }
+  .amb-link-row a {
+    color: #111;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .amb-link-row a:hover {
+    text-decoration: underline;
+  }
+</style>
+
+<div class="amb-auth-wrap">
+  <h2>Ambassador Login</h2>
+  <p class="amb-subtitle">Sign in to your ambassador account</p>
+
+  <div id="amb-login-error" class="amb-error-msg"></div>
+
+  <form id="amb-login-form" onsubmit="return false;">
+    <div class="amb-form-group">
+      <label for="amb-email">Email</label>
+      <input type="email" id="amb-email" name="email" placeholder="you@example.com" required autocomplete="email" />
+    </div>
+
+    <div class="amb-form-group">
+      <label for="amb-password">Password</label>
+      <input type="password" id="amb-password" name="password" placeholder="Enter your password" required autocomplete="current-password" />
+    </div>
+
+    <button type="submit" id="amb-login-btn" class="amb-btn-primary">Sign In</button>
+  </form>
+
+  <div class="amb-link-row">
+    Don't have an account? <a href="/pages/ambassador-signup">Sign Up</a>
+  </div>
+</div>
+
+<script>
+(function () {
+  var API_ORIGIN = 'https://api.adamthefirstsin.com';
+  var REDIRECT_PAGE = '/pages/ambassador-settlement';
+
+  var form = document.getElementById('amb-login-form');
+  var btn = document.getElementById('amb-login-btn');
+  var errorEl = document.getElementById('amb-login-error');
+
+  // 이미 로그인된 경우 리다이렉트
+  var existingToken = localStorage.getItem('ambassador_token');
+  if (existingToken) {
+    window.location.href = REDIRECT_PAGE;
+    return;
+  }
+
+  form.addEventListener('submit', function () {
+    var email = document.getElementById('amb-email').value.trim();
+    var password = document.getElementById('amb-password').value;
+
+    if (!email || !password) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Signing in...';
+    errorEl.style.display = 'none';
+
+    fetch(API_ORIGIN + '/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, password: password })
+    })
+    .then(function (res) {
+      return res.json().then(function (data) {
+        return { ok: res.ok, status: res.status, data: data };
+      });
+    })
+    .then(function (result) {
+      if (!result.ok) {
+        throw new Error(result.data.message || 'Login failed');
+      }
+
+      // 토큰 저장 후 정산 페이지로 이동
+      localStorage.setItem('ambassador_token', result.data.token);
+      window.location.href = REDIRECT_PAGE + '?token=' + encodeURIComponent(result.data.token);
+    })
+    .catch(function (err) {
+      errorEl.textContent = err.message;
+      errorEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Sign In';
+    });
+  });
+})();
+</script>
+
+{% schema %}
+{
+  "name": "Ambassador Login",
+  "settings": []
+}
+{% endschema %}
