@@ -207,7 +207,7 @@
     })
     .then(function (res) {
       if (res.ok) {
-        window.location.href = '/pages/ambassador-settlement';
+        window.location.href = '/pages/ambassador-dashboard';
       } else {
         localStorage.removeItem('ambassador_token');
       }
@@ -289,7 +289,7 @@
         successEl.textContent = 'Account created! Redirecting...';
         successEl.style.display = 'block';
         setTimeout(function () {
-          window.location.href = '/pages/ambassador-settlement?token=' + encodeURIComponent(result.data.token);
+          window.location.href = '/pages/ambassador-dashboard?token=' + encodeURIComponent(result.data.token);
         }, 1000);
       } else {
         // 자동 로그인 실패 → 로그인 페이지로 이동
