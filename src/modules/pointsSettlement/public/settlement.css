@@ -392,6 +392,28 @@ select {
 }
 select:focus { border-color: #555; }
 
+/* ── 세무정보 유형 버튼 ── */
+.taxTypeBtn {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  transition: all .15s;
+}
+.taxTypeBtn.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+.taxTypeBtn:hover:not(.active) {
+  border-color: #999;
+}
+
 /* ── 반응형 ── */
 @media (max-width: 760px) {
   .grid {

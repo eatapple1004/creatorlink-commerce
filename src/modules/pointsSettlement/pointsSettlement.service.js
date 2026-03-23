@@ -112,6 +112,13 @@ export const registerBeneficiaryService = async (ambassadorId, {
  * 4) 실패 시 포인트 복원 (보상 트랜잭션)
  */
 export const submitWithdrawalService = async ({ ambassador_id, amount }) => {
+  // 0-0. 세무정보 등록 여부 확인
+  const { getTaxInfoSummary } = await import("./taxInfo.repository.js");
+  const taxInfo = await getTaxInfoSummary(ambassador_id);
+  if (!taxInfo) {
+    throw new Error("TAX_INFO_REQUIRED");
+  }
+
   // 0-1. 전체 정산 기능 활성화 여부 확인
   const settlementEnabled = await getSetting("settlement_enabled");
   if (settlementEnabled === "false") {

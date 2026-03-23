@@ -148,7 +148,7 @@ const overlay = document.getElementById("modalOverlay");
 
 function openModal(id) {
   overlay.classList.remove("hidden");
-  ["modalRegister", "modalWithdraw"].forEach((m) => {
+  ["modalRegister", "modalWithdraw", "modalTaxInfo"].forEach((m) => {
     document.getElementById(m).classList.add("hidden");
   });
   document.getElementById(id).classList.remove("hidden");
@@ -375,11 +375,19 @@ document.getElementById("btnSettle").addEventListener("click", async () => {
   btn.textContent = "확인 중...";
 
   try {
+    // 1) 세무정보 확인
+    const taxRes = await authFetch(`${API_BASE}/api/settlement/tax-info`);
+    const taxData = await taxRes.json();
+
+    if (!taxData.exists) {
+      // 세무정보 미등록 → 세무정보 등록 모달
+      openTaxInfoModal();
+      return;
+    }
+
+    // 2) 계좌 확인
     const res  = await authFetch(`${API_BASE}/api/settlement/beneficiary`);
     const data = await res.json();
-
-    console.log("[debug] beneficiary check:", JSON.stringify(data));
-    console.log("[debug] bankInfoFilled display:", document.getElementById("bankInfoFilled").style.display);
 
     if (data.exists) {
       // 계좌 있음 → 출금 모달
@@ -390,11 +398,9 @@ document.getElementById("btnSettle").addEventListener("click", async () => {
             account_number_masked:document.getElementById("bankNumber").textContent,
           }
         : null;
-      console.log("[debug] opening withdraw modal, bank:", JSON.stringify(bank));
       openWithdrawModal(bank);
     } else {
       // 계좌 없음 → 등록 플로우
-      console.log("[debug] opening register flow");
       openRegisterFlow();
     }
   } catch {
@@ -402,6 +408,106 @@ document.getElementById("btnSettle").addEventListener("click", async () => {
   } finally {
     btn.disabled = false;
     btn.textContent = "정산 요청";
+  }
+});
+
+/* ─────────────────────────────────────
+   [T] 세무정보 등록 플로우
+───────────────────────────────────── */
+let taxEntityType = "individual";
+
+function openTaxInfoModal() {
+  taxEntityType = "individual";
+  document.getElementById("taxTypeIndividual").classList.add("active");
+  document.getElementById("taxTypeBusiness").classList.remove("active");
+  document.getElementById("taxFieldsIndividual").style.display = "block";
+  document.getElementById("taxFieldsBusiness").style.display = "none";
+  document.getElementById("taxName").value = "";
+  document.getElementById("taxSsnFront").value = "";
+  document.getElementById("taxSsnBack").value = "";
+  document.getElementById("taxBizName").value = "";
+  document.getElementById("taxBizNumber").value = "";
+  document.getElementById("taxErr").textContent = "";
+  document.getElementById("taxErr").classList.add("hidden");
+  openModal("modalTaxInfo");
+}
+
+// 개인/사업자 토글
+document.getElementById("taxTypeIndividual").addEventListener("click", () => {
+  taxEntityType = "individual";
+  document.getElementById("taxTypeIndividual").classList.add("active");
+  document.getElementById("taxTypeBusiness").classList.remove("active");
+  document.getElementById("taxFieldsIndividual").style.display = "block";
+  document.getElementById("taxFieldsBusiness").style.display = "none";
+});
+document.getElementById("taxTypeBusiness").addEventListener("click", () => {
+  taxEntityType = "business";
+  document.getElementById("taxTypeBusiness").classList.add("active");
+  document.getElementById("taxTypeIndividual").classList.remove("active");
+  document.getElementById("taxFieldsBusiness").style.display = "block";
+  document.getElementById("taxFieldsIndividual").style.display = "none";
+});
+
+// 취소
+document.getElementById("btnTaxCancel").addEventListener("click", closeModal);
+
+// 등록
+document.getElementById("btnTaxSubmit").addEventListener("click", async () => {
+  const errEl = document.getElementById("taxErr");
+  errEl.classList.add("hidden");
+
+  let payload;
+  if (taxEntityType === "individual") {
+    const name = document.getElementById("taxName").value.trim();
+    const ssnFront = document.getElementById("taxSsnFront").value.trim();
+    const ssnBack = document.getElementById("taxSsnBack").value.trim();
+
+    if (!name) { errEl.textContent = "이름을 입력해주세요."; errEl.classList.remove("hidden"); return; }
+    if (!ssnFront || ssnFront.length !== 6) { errEl.textContent = "주민등록번호 앞자리 6자리를 입력해주세요."; errEl.classList.remove("hidden"); return; }
+    if (!ssnBack || ssnBack.length !== 7) { errEl.textContent = "주민등록번호 뒷자리 7자리를 입력해주세요."; errEl.classList.remove("hidden"); return; }
+
+    payload = {
+      entity_type: "individual",
+      name,
+      ssn: ssnFront + ssnBack,
+    };
+  } else {
+    const bizName = document.getElementById("taxBizName").value.trim();
+    const bizNumber = document.getElementById("taxBizNumber").value.trim();
+
+    if (!bizName) { errEl.textContent = "상호명을 입력해주세요."; errEl.classList.remove("hidden"); return; }
+    if (!bizNumber) { errEl.textContent = "사업자번호를 입력해주세요."; errEl.classList.remove("hidden"); return; }
+
+    payload = {
+      entity_type: "business",
+      business_name: bizName,
+      business_number: bizNumber,
+    };
+  }
+
+  const btn = document.getElementById("btnTaxSubmit");
+  btn.disabled = true;
+  btn.textContent = "등록 중...";
+
+  try {
+    const res = await authFetch(`${API_BASE}/api/settlement/tax-info`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    const body = await res.json();
+    if (!res.ok) {
+      errEl.textContent = body.message || "등록에 실패했습니다.";
+      errEl.classList.remove("hidden");
+      return;
+    }
+    closeModal();
+    alert("세무정보가 등록되었습니다. 정산 요청을 다시 진행해주세요.");
+  } catch {
+    errEl.textContent = "네트워크 오류가 발생했습니다.";
+    errEl.classList.remove("hidden");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "등록하기";
   }
 });
 

@@ -7,6 +7,8 @@ import {
   getBeneficiary,
   registerBeneficiary,
   submitWithdrawal,
+  getTaxInfoHandler,
+  registerTaxInfo,
 } from "./pointsSettlement.controller.js";
 
 const router = express.Router();
@@ -34,5 +36,9 @@ router.get("/api/settlement/beneficiary",  verifyToken, getBeneficiary);
 router.post("/api/settlement/beneficiary", verifyToken, registerBeneficiary);
 // 출금 요청
 router.post("/api/settlement/withdraw",    verifyToken, submitWithdrawal);
+// 세무정보 조회
+router.get("/api/settlement/tax-info",     verifyToken, getTaxInfoHandler);
+// 세무정보 등록
+router.post("/api/settlement/tax-info",    verifyToken, registerTaxInfo);
 
 export default router;
