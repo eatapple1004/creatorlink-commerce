@@ -429,6 +429,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.key === "Enter") document.getElementById("btnOtpVerify").click();
   });
 
+  // Logout
+  document.getElementById("btnLogout").addEventListener("click", async () => {
+    await fetch(`${API}/logout`, { method: "POST", credentials: "include" });
+    showLogin();
+  });
+
   // Tabs
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", () => {

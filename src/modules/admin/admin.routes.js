@@ -22,6 +22,10 @@ router.get("/", (req, res) => {
 // Login (no auth required)
 router.post("/api/login", loginAdmin);
 router.post("/api/verify-otp", verifyOtp);
+router.post("/api/logout", (req, res) => {
+  res.clearCookie("admin_token", { httpOnly: true, sameSite: "strict" });
+  res.json({ success: true });
+});
 
 // ── Protected API routes ──
 router.get("/api/settings",            adminAuth, ctrl.getSettings);
