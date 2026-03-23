@@ -1,6 +1,6 @@
 import crypto from "crypto";
 
-const ALGORITHM = "aes-256-gcm";
+const ALGORITHM = "aria-256-gcm";
 const IV_LENGTH = 12;
 const AUTH_TAG_LENGTH = 16;
 
@@ -17,7 +17,7 @@ function getKey() {
 }
 
 /**
- * AES-256-GCM 암호화
+ * ARIA-256-GCM 암호화
  * @param {string} plaintext
  * @returns {{ encrypted: string, iv: string, authTag: string }} hex 인코딩된 값
  */
@@ -40,7 +40,7 @@ export function encrypt(plaintext) {
 }
 
 /**
- * AES-256-GCM 복호화
+ * ARIA-256-GCM 복호화
  * @param {{ encrypted: string, iv: string, authTag: string }} data hex 인코딩된 값
  * @returns {string} 복호화된 원문
  */
