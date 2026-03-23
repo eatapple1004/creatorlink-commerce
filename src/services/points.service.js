@@ -156,7 +156,7 @@ export const addPointsByShopifyOrderService = async ({
             points = Math.round(paid * (fallbackRate / 100) * 100) / 100;
         }
 
-        if (points <= 0) throw new Error("INVALID_AMOUNT");
+        if (points <= 0) return { skipped: true, reason: "ZERO_POINTS" };
 
         // 3) 현재 포인트 조회
         const record = await findPointsByAmbassador(ambassador_id, client);

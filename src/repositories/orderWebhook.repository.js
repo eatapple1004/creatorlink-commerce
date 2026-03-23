@@ -73,6 +73,31 @@ export const findOrderById = async (orderId) => {
   return res.rows[0] || null;
 };
 
+/**
+ * 기프트카드 결제 금액 누적 저장
+ */
+export const addGiftCardAmount = async (orderId, amount) => {
+  const sql = `
+    UPDATE order_webhook
+    SET gift_card_amount = COALESCE(gift_card_amount, 0) + $2, updated_at = NOW()
+    WHERE order_id = $1
+    RETURNING *;
+  `;
+  const res = await pool.query(sql, [orderId, amount]);
+  // order_webhook 레코드가 없으면 나중에 upsert 시 반영되도록 임시 저장
+  if (res.rowCount === 0) {
+    await pool.query(
+      `INSERT INTO order_webhook (order_id, gift_card_amount, paid, created_at, updated_at)
+       VALUES ($1, $2, FALSE, NOW(), NOW())
+       ON CONFLICT (order_id) DO UPDATE SET
+         gift_card_amount = COALESCE(order_webhook.gift_card_amount, 0) + $2,
+         updated_at = NOW()`,
+      [orderId, amount]
+    );
+  }
+  return res.rows[0];
+};
+
 export const markPaid = async (orderId, amount, currency) => {
   const sql = `
     UPDATE order_webhook

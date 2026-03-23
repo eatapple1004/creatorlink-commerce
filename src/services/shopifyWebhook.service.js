@@ -69,6 +69,16 @@ function extractDiscountCode(order) {
  * - 포인트 적립은 하지 않음
  */
 export const processOrderCreate = async (order) => {
+  // 기프트카드 트랜잭션 감지 → 금액 저장
+  if (!isOrderPayload(order) && order?.gateway === "gift_card" && order?.order_id && order?.kind === "sale") {
+    const gcAmount = Number(order.amount || 0);
+    if (gcAmount > 0) {
+      await orderWebhookRepo.addGiftCardAmount(order.order_id, gcAmount);
+      logger.info(`🎁 [Shopify] 기프트카드 결제 금액 저장 → order_id=${order.order_id}, amount=${gcAmount}`);
+    }
+    return;
+  }
+
   if (!isOrderPayload(order)) {
     logger.warn(`🟨 [Shopify] orders/create received but NOT an Order payload → skip (id=${order?.id})`);
     return;
@@ -160,32 +170,54 @@ export const processOrderPaid = async (order) => {
 
   // ambassador 존재 시 포인트 적립 시도
   if (saved?.ambassador_id && totalPrice !== null) {
-    // line_items에서 sku + 실결제금액 계산
-    // discount_allocations 합산으로 정확한 할인금액 반영
-    const lineItems = (order.line_items || []).map((item) => {
-      const grossAmount      = Number(item.price) * Number(item.quantity);
-      const discountAmount   = (item.discount_allocations || [])
-        .reduce((sum, d) => sum + Number(d.amount || 0), 0);
-      const paidAmount = Math.max(0, grossAmount - discountAmount);
+    // 기프트카드 결제 금액 조회
+    const orderRecord = await orderWebhookRepo.findOrderById(orderId);
+    const giftCardAmount = Number(orderRecord?.gift_card_amount || 0);
 
-      return {
-        sku:        item.sku,
-        paidAmount, // 실결제금액 (할인 적용 후)
-      };
-    });
+    // 기프트카드 전액 결제 시 (payment_gateway_names로도 체크)
+    const gateways = order.payment_gateway_names || [];
+    const isAllGiftCard = gateways.length > 0 && gateways.every((g) => g === "gift_card");
 
-    const result = await pointsService.addPointsByShopifyOrderService({
-      ambassador_id: saved.ambassador_id,
-      order_id: orderId,
-      lineItems,
-      amount: totalPrice, // lineItems 없을 때 fallback
-      description: `Shopify 주문(${orderId}) 결제 적립`,
-    });
+    // 실제 현금 결제 금액 계산
+    const cashPaid = isAllGiftCard ? 0 : Math.max(0, totalPrice - giftCardAmount);
 
-    if (result?.skipped) {
-      logger.info(`🟨 [Shopify] 포인트 적립 스킵(이미 처리됨) → order_id=${orderId}`);
+    if (cashPaid <= 0) {
+      logger.info(`🎁 [Shopify] 기프트카드 전액 결제 → 포인트 적립 스킵 (order_id=${orderId}, gift_card=${giftCardAmount})`);
     } else {
-      logger.info(`🟩 [Shopify] 포인트 적립 완료 → order_id=${orderId}`);
+      // 기프트카드 비율 계산 (혼합 결제 시 각 아이템에 비례 적용)
+      const cashRatio = totalPrice > 0 ? cashPaid / totalPrice : 0;
+
+      // line_items에서 sku + 실결제금액 계산
+      // discount_allocations 합산으로 정확한 할인금액 반영
+      const lineItems = (order.line_items || []).map((item) => {
+        const grossAmount      = Number(item.price) * Number(item.quantity);
+        const discountAmount   = (item.discount_allocations || [])
+          .reduce((sum, d) => sum + Number(d.amount || 0), 0);
+        const afterDiscount = Math.max(0, grossAmount - discountAmount);
+        // 기프트카드 비율 적용 → 현금 결제분만 포인트 대상
+        const paidAmount = Math.round(afterDiscount * cashRatio * 100) / 100;
+
+        return {
+          sku:        item.sku,
+          paidAmount, // 현금 실결제금액 (할인 + 기프트카드 적용 후)
+        };
+      });
+
+      logger.info(`💰 [Shopify] 포인트 계산 → total=${totalPrice}, giftCard=${giftCardAmount}, cash=${cashPaid}, ratio=${cashRatio.toFixed(4)}`);
+
+      const result = await pointsService.addPointsByShopifyOrderService({
+        ambassador_id: saved.ambassador_id,
+        order_id: orderId,
+        lineItems,
+        amount: cashPaid, // lineItems 없을 때 fallback
+        description: `Shopify 주문(${orderId}) 결제 적립`,
+      });
+
+      if (result?.skipped) {
+        logger.info(`🟨 [Shopify] 포인트 적립 스킵(이미 처리됨) → order_id=${orderId}`);
+      } else {
+        logger.info(`🟩 [Shopify] 포인트 적립 완료 → order_id=${orderId}`);
+      }
     }
   }
 
