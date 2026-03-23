@@ -256,6 +256,46 @@ async function loadTransactionHistory(id) {
   }
 }
 
+/* ── Tax Info ── */
+async function loadTaxInfo(id) {
+  const section = document.getElementById("taxInfoSection");
+  const grid = document.getElementById("taxInfoGrid");
+
+  try {
+    const res = await apiFetch(`${API}/ambassadors/${id}/tax-info`);
+    const data = await res.json();
+
+    if (!data.exists) {
+      section.classList.remove("hidden");
+      grid.innerHTML = `<div class="detailItem"><span class="dlabel">Status</span><br/><span class="dvalue" style="color:#c00;">미등록</span></div>`;
+      return;
+    }
+
+    const t = data.tax_info;
+    if (t.entity_type === "individual") {
+      grid.innerHTML = `
+        <div class="detailItem"><span class="dlabel">유형</span><br/><span class="dvalue">개인</span></div>
+        <div class="detailItem"><span class="dlabel">이름</span><br/><span class="dvalue">${t.name || "-"}</span></div>
+        <div class="detailItem"><span class="dlabel">주민등록번호</span><br/><span class="dvalue" style="font-family:monospace;">${t.ssn_formatted || "-"}</span></div>
+        <div class="detailItem"><span class="dlabel">등록일</span><br/><span class="dvalue">${fmtDate(t.created_at)}</span></div>
+      `;
+    } else {
+      grid.innerHTML = `
+        <div class="detailItem"><span class="dlabel">유형</span><br/><span class="dvalue">사업자</span></div>
+        <div class="detailItem"><span class="dlabel">상호명</span><br/><span class="dvalue">${t.business_name || "-"}</span></div>
+        <div class="detailItem"><span class="dlabel">사업자번호</span><br/><span class="dvalue" style="font-family:monospace;">${t.business_number_formatted || t.business_number || "-"}</span></div>
+        <div class="detailItem"><span class="dlabel">등록일</span><br/><span class="dvalue">${fmtDate(t.created_at)}</span></div>
+      `;
+    }
+    section.classList.remove("hidden");
+  } catch (e) {
+    if (e.message !== "AUTH") {
+      section.classList.add("hidden");
+      console.error("loadTaxInfo error:", e);
+    }
+  }
+}
+
 /* ──────────────────────────────────────
    DOM Ready: bind all events
 ────────────────────────────────────── */
@@ -386,6 +426,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       document.getElementById("pointsDetail").classList.remove("hidden");
       loadTransactionHistory(a.id);
+      loadTaxInfo(a.id);
     } catch (e) {
       if (e.message !== "AUTH") {
         console.error("lookup error:", e);

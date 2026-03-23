@@ -30,6 +30,7 @@ router.get("/api/ambassadors",         adminAuth, ctrl.listAmbassadors);
 router.get("/api/ambassadors/:id",     adminAuth, ctrl.getAmbassador);
 router.put("/api/ambassadors/:id/settlement", adminAuth, ctrl.toggleAmbassadorSettlement);
 router.get("/api/ambassadors/:id/transactions", adminAuth, ctrl.getTransactions);
+router.get("/api/ambassadors/:id/tax-info",    adminAuth, ctrl.getAmbassadorTaxInfo);
 router.get("/api/transfers/export",    adminAuth, ctrl.exportTransfers);
 router.get("/api/transfers",           adminAuth, ctrl.getTransfers);
 router.post("/api/points/adjust",      adminAuth, ctrl.adjustPoints);

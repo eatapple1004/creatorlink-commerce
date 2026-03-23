@@ -1,4 +1,6 @@
 import * as service from "./admin.service.js";
+import { getTaxInfo } from "../pointsSettlement/taxInfo.repository.js";
+import { decrypt } from "../../utils/encryption.js";
 
 export async function getSettings(req, res) {
   try {
@@ -139,6 +141,55 @@ export async function adjustPoints(req, res) {
       return res.status(400).json({ message: "Invalid input" });
     }
     console.error("admin adjustPoints error:", err.message);
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
+/**
+ * 앰버서더 세무정보 조회 (관리자용 - 주민등록번호 복호화)
+ * GET /admin/api/ambassadors/:id/tax-info
+ */
+export async function getAmbassadorTaxInfo(req, res) {
+  try {
+    const id = Number(req.params.id);
+    const info = await getTaxInfo(id);
+
+    if (!info) {
+      return res.json({ success: true, exists: false, tax_info: null });
+    }
+
+    const result = {
+      entity_type: info.entity_type,
+    };
+
+    if (info.entity_type === "individual") {
+      result.name = info.name;
+      // 주민등록번호 복호화
+      if (info.encrypted_ssn && info.ssn_iv && info.ssn_auth_tag) {
+        result.ssn = decrypt({
+          encrypted: info.encrypted_ssn,
+          iv: info.ssn_iv,
+          authTag: info.ssn_auth_tag,
+        });
+        // 포맷: 000000-0000000
+        result.ssn_formatted = result.ssn.slice(0, 6) + "-" + result.ssn.slice(6);
+      }
+    } else {
+      result.business_name = info.business_name;
+      result.business_number = info.business_number;
+      // 포맷: 000-00-00000
+      if (info.business_number && info.business_number.length === 10) {
+        result.business_number_formatted =
+          info.business_number.slice(0, 3) + "-" +
+          info.business_number.slice(3, 5) + "-" +
+          info.business_number.slice(5);
+      }
+    }
+
+    result.created_at = info.created_at;
+    res.json({ success: true, exists: true, tax_info: result });
+  } catch (err) {
+    console.error("admin getTaxInfo error:", err.message);
     res.status(500).json({ message: "Server error" });
   }
 }
