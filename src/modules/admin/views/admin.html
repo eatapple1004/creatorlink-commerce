@@ -10,11 +10,32 @@
 
   <!-- Login Screen -->
   <div id="loginScreen" class="loginWrap">
-    <div class="loginBox">
+    <!-- Step 1: Password -->
+    <div class="loginBox" id="loginStep1">
       <h1>Admin Login</h1>
       <input type="password" id="loginPw" placeholder="Password" />
       <button id="btnLogin">Login</button>
       <p class="loginErr" id="loginErr"></p>
+    </div>
+
+    <!-- Step 2: 2FA Setup (QR Code) -->
+    <div class="loginBox hidden" id="loginStep2Setup">
+      <h1>2FA Setup</h1>
+      <p style="font-size:12px;color:#888;margin-bottom:12px;">Google Authenticator에서 아래 QR 코드를 스캔하세요.</p>
+      <img id="qrCodeImg" src="" alt="QR Code" style="width:200px;height:200px;margin:0 auto 12px;display:block;border-radius:8px;" />
+      <p style="font-size:10px;color:#aaa;margin-bottom:12px;word-break:break-all;">수동 입력: <code id="manualSecret" style="font-size:10px;"></code></p>
+      <input type="text" id="setupOtp" placeholder="6자리 OTP 입력" maxlength="6" inputmode="numeric" style="text-align:center;font-size:18px;letter-spacing:8px;" />
+      <button id="btnSetupVerify">Verify & Activate</button>
+      <p class="loginErr" id="setupErr"></p>
+    </div>
+
+    <!-- Step 3: 2FA Verify (기존 사용자) -->
+    <div class="loginBox hidden" id="loginStep2Verify">
+      <h1>2FA Verification</h1>
+      <p style="font-size:12px;color:#888;margin-bottom:12px;">Google Authenticator의 6자리 코드를 입력하세요.</p>
+      <input type="text" id="verifyOtp" placeholder="000000" maxlength="6" inputmode="numeric" style="text-align:center;font-size:18px;letter-spacing:8px;" />
+      <button id="btnOtpVerify">Verify</button>
+      <p class="loginErr" id="verifyErr"></p>
     </div>
   </div>
 

@@ -1,7 +1,7 @@
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
-import { adminAuth, loginAdmin } from "./admin.auth.js";
+import { adminAuth, loginAdmin, verifyOtp } from "./admin.auth.js";
 import * as ctrl from "./admin.controller.js";
 
 const router = express.Router();
@@ -21,6 +21,7 @@ router.get("/", (req, res) => {
 
 // Login (no auth required)
 router.post("/api/login", loginAdmin);
+router.post("/api/verify-otp", verifyOtp);
 
 // ── Protected API routes ──
 router.get("/api/settings",            adminAuth, ctrl.getSettings);

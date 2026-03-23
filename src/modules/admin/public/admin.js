@@ -32,6 +32,11 @@ async function apiFetch(url, options = {}) {
 function showLogin() {
   document.getElementById("loginScreen").classList.remove("hidden");
   document.getElementById("adminMain").classList.add("hidden");
+  // 로그인 Step1으로 초기화
+  document.getElementById("loginStep1").classList.remove("hidden");
+  document.getElementById("loginStep2Setup").classList.add("hidden");
+  document.getElementById("loginStep2Verify").classList.add("hidden");
+  document.getElementById("loginPw").value = "";
 }
 function showAdmin() {
   document.getElementById("loginScreen").classList.add("hidden");
@@ -302,7 +307,9 @@ async function loadTaxInfo(id) {
 document.addEventListener("DOMContentLoaded", () => {
   console.log("[admin.js] DOMContentLoaded - binding events");
 
-  // Login
+  // Login Step 1: Password
+  let tempToken = null;
+
   document.getElementById("btnLogin").addEventListener("click", async () => {
     const pw = document.getElementById("loginPw").value;
     const errEl = document.getElementById("loginErr");
@@ -314,13 +321,32 @@ document.addEventListener("DOMContentLoaded", () => {
         credentials: "include",
         body: JSON.stringify({ password: pw }),
       });
+      const data = await res.json();
       if (!res.ok) {
-        errEl.textContent = "Invalid password";
+        errEl.textContent = data.message || "Invalid password";
         errEl.style.display = "block";
         return;
       }
-      showAdmin();
-      loadDashboard();
+
+      if (data.requires_2fa) {
+        tempToken = data.temp_token;
+        document.getElementById("loginStep1").classList.add("hidden");
+
+        if (data.setup_required) {
+          // 최초 2FA 설정
+          document.getElementById("qrCodeImg").src = data.qr_url;
+          document.getElementById("manualSecret").textContent = data.secret_manual;
+          document.getElementById("loginStep2Setup").classList.remove("hidden");
+          document.getElementById("setupOtp").focus();
+        } else {
+          // 기존 2FA 검증
+          document.getElementById("loginStep2Verify").classList.remove("hidden");
+          document.getElementById("verifyOtp").focus();
+        }
+      } else {
+        showAdmin();
+        loadDashboard();
+      }
     } catch {
       errEl.textContent = "Network error";
       errEl.style.display = "block";
@@ -329,6 +355,78 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("loginPw").addEventListener("keydown", (e) => {
     if (e.key === "Enter") document.getElementById("btnLogin").click();
+  });
+
+  // Login Step 2a: 2FA Setup - Verify first OTP
+  document.getElementById("btnSetupVerify").addEventListener("click", async () => {
+    const otp = document.getElementById("setupOtp").value.trim();
+    const errEl = document.getElementById("setupErr");
+    errEl.style.display = "none";
+    if (!otp || otp.length !== 6) {
+      errEl.textContent = "6자리 코드를 입력해주세요.";
+      errEl.style.display = "block";
+      return;
+    }
+    try {
+      const res = await fetch(`${API}/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ otp, temp_token: tempToken }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        errEl.textContent = data.message || "Verification failed";
+        errEl.style.display = "block";
+        return;
+      }
+      tempToken = null;
+      showAdmin();
+      loadDashboard();
+    } catch {
+      errEl.textContent = "Network error";
+      errEl.style.display = "block";
+    }
+  });
+
+  document.getElementById("setupOtp").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") document.getElementById("btnSetupVerify").click();
+  });
+
+  // Login Step 2b: 2FA Verify (existing)
+  document.getElementById("btnOtpVerify").addEventListener("click", async () => {
+    const otp = document.getElementById("verifyOtp").value.trim();
+    const errEl = document.getElementById("verifyErr");
+    errEl.style.display = "none";
+    if (!otp || otp.length !== 6) {
+      errEl.textContent = "6자리 코드를 입력해주세요.";
+      errEl.style.display = "block";
+      return;
+    }
+    try {
+      const res = await fetch(`${API}/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ otp, temp_token: tempToken }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        errEl.textContent = data.message || "Verification failed";
+        errEl.style.display = "block";
+        return;
+      }
+      tempToken = null;
+      showAdmin();
+      loadDashboard();
+    } catch {
+      errEl.textContent = "Network error";
+      errEl.style.display = "block";
+    }
+  });
+
+  document.getElementById("verifyOtp").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") document.getElementById("btnOtpVerify").click();
   });
 
   // Tabs
