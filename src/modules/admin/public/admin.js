@@ -262,6 +262,27 @@ async function loadTransactionHistory(id) {
   }
 }
 
+/* ── Grades ── */
+let gradeList = [];
+
+async function loadGrades() {
+  if (gradeList.length > 0) return;
+  try {
+    const res = await apiFetch(`${API}/grades`);
+    const data = await res.json();
+    gradeList = data.grades || [];
+  } catch (e) {
+    if (e.message !== "AUTH") console.error("loadGrades error:", e);
+  }
+}
+
+function renderGradeSelect(currentGradeName) {
+  const select = document.getElementById("pdGradeSelect");
+  select.innerHTML = gradeList.map((g) =>
+    `<option value="${g.id}" ${g.code.toUpperCase() === (currentGradeName || "").toUpperCase() ? "selected" : ""}>${g.code} (${g.commission_rate}%)</option>`
+  ).join("");
+}
+
 /* ── Tax Info ── */
 async function loadTaxInfo(id) {
   const section = document.getElementById("taxInfoSection");
@@ -526,7 +547,8 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("pdId").textContent = a.id;
       document.getElementById("pdEmail").textContent = a.email || "-";
       document.getElementById("pdPaypal").textContent = a.paypal_email || "-";
-      document.getElementById("pdGrade").textContent = a.grade_name || "-";
+      await loadGrades();
+      renderGradeSelect(a.grade_name);
       document.getElementById("pdCommission").textContent = a.commission_rate ? `${a.commission_rate}%` : "-";
       document.getElementById("pdReferral").textContent = a.referral_code || "-";
       document.getElementById("pdSettlementToggle").checked = a.settlement_enabled !== false;
@@ -546,6 +568,34 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   document.getElementById("pointsAmbId").addEventListener("keydown", (e) => {
     if (e.key === "Enter") document.getElementById("btnPointsLookup").click();
+  });
+
+  // Grade change
+  document.getElementById("pdGradeSelect").addEventListener("change", async (e) => {
+    if (!currentAmbId) return;
+    const gradeId = e.target.value;
+    if (!confirm(`등급을 변경하시겠습니까?`)) {
+      document.getElementById("btnPointsLookup").click(); // 원래 값 복원
+      return;
+    }
+    try {
+      const res = await apiFetch(`${API}/ambassadors/${currentAmbId}/grade`, {
+        method: "PUT",
+        body: JSON.stringify({ grade_id: gradeId }),
+      });
+      if (!res.ok) {
+        alert("등급 변경에 실패했습니다.");
+        document.getElementById("btnPointsLookup").click();
+        return;
+      }
+      // 커미션 정보 갱신
+      document.getElementById("btnPointsLookup").click();
+    } catch (err) {
+      if (err.message !== "AUTH") {
+        alert("등급 변경에 실패했습니다.");
+        document.getElementById("btnPointsLookup").click();
+      }
+    }
   });
 
   // Per-ambassador settlement toggle (Points tab detail)

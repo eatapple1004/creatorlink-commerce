@@ -72,6 +72,23 @@ export const getAmbassadorById = async (id) => {
   return rows[0] || null;
 };
 
+// ── Grades ──
+
+export const getAllGrades = async () => {
+  const { rows } = await pool.query(
+    "SELECT id, code, commission_rate FROM ambassador_grade ORDER BY id"
+  );
+  return rows;
+};
+
+export const updateAmbassadorGrade = async (ambassadorId, gradeId) => {
+  const { rows } = await pool.query(
+    "UPDATE ambassador_profile SET grade_id = $1, updated_at = NOW() WHERE id = $2 RETURNING id, grade_id",
+    [gradeId, ambassadorId]
+  );
+  return rows[0] || null;
+};
+
 // ── Transfers ──
 
 export const getTransfers = async ({ ambassadorId, limit = 30, offset = 0 }) => {

@@ -1,4 +1,5 @@
 import * as service from "./admin.service.js";
+import { getAllGrades, updateAmbassadorGrade } from "./admin.repository.js";
 import { getTaxInfo } from "../pointsSettlement/taxInfo.repository.js";
 import { decrypt } from "../../utils/encryption.js";
 
@@ -141,6 +142,43 @@ export async function adjustPoints(req, res) {
       return res.status(400).json({ message: "Invalid input" });
     }
     console.error("admin adjustPoints error:", err.message);
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
+/**
+ * 등급 목록 조회
+ * GET /admin/api/grades
+ */
+export async function listGrades(req, res) {
+  try {
+    const grades = await getAllGrades();
+    res.json({ success: true, grades });
+  } catch (err) {
+    console.error("admin listGrades error:", err.message);
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
+/**
+ * 앰버서더 등급 변경
+ * PUT /admin/api/ambassadors/:id/grade
+ * body: { grade_id }
+ */
+export async function changeAmbassadorGrade(req, res) {
+  try {
+    const id = Number(req.params.id);
+    const { grade_id } = req.body;
+    if (!grade_id) {
+      return res.status(400).json({ message: "grade_id is required" });
+    }
+    const result = await updateAmbassadorGrade(id, Number(grade_id));
+    if (!result) {
+      return res.status(404).json({ message: "Ambassador not found" });
+    }
+    res.json({ success: true, result });
+  } catch (err) {
+    console.error("admin changeGrade error:", err.message);
     res.status(500).json({ message: "Server error" });
   }
 }

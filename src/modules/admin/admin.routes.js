@@ -35,6 +35,8 @@ router.get("/api/ambassadors",         adminAuth, ctrl.listAmbassadors);
 router.get("/api/ambassadors/:id",     adminAuth, ctrl.getAmbassador);
 router.put("/api/ambassadors/:id/settlement", adminAuth, ctrl.toggleAmbassadorSettlement);
 router.get("/api/ambassadors/:id/transactions", adminAuth, ctrl.getTransactions);
+router.put("/api/ambassadors/:id/grade",        adminAuth, ctrl.changeAmbassadorGrade);
+router.get("/api/grades",                        adminAuth, ctrl.listGrades);
 router.get("/api/ambassadors/:id/tax-info",    adminAuth, ctrl.getAmbassadorTaxInfo);
 router.get("/api/transfers/export",    adminAuth, ctrl.exportTransfers);
 router.get("/api/transfers",           adminAuth, ctrl.getTransfers);
