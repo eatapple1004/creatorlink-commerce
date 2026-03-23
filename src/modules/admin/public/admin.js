@@ -36,6 +36,7 @@ function showLogin() {
   document.getElementById("loginStep1").classList.remove("hidden");
   document.getElementById("loginStep2Setup").classList.add("hidden");
   document.getElementById("loginStep2Verify").classList.add("hidden");
+  document.getElementById("loginUser").value = "";
   document.getElementById("loginPw").value = "";
 }
 function showAdmin() {
@@ -311,15 +312,17 @@ document.addEventListener("DOMContentLoaded", () => {
   let tempToken = null;
 
   document.getElementById("btnLogin").addEventListener("click", async () => {
+    const username = document.getElementById("loginUser").value.trim();
     const pw = document.getElementById("loginPw").value;
     const errEl = document.getElementById("loginErr");
     errEl.style.display = "none";
+    if (!username) { errEl.textContent = "Username을 입력해주세요."; errEl.style.display = "block"; return; }
     try {
       const res = await fetch(`${API}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ password: pw }),
+        body: JSON.stringify({ username, password: pw }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -353,6 +356,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  document.getElementById("loginUser").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") document.getElementById("loginPw").focus();
+  });
   document.getElementById("loginPw").addEventListener("keydown", (e) => {
     if (e.key === "Enter") document.getElementById("btnLogin").click();
   });

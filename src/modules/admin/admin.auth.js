@@ -1,16 +1,36 @@
 import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 import speakeasy from "speakeasy";
 import QRCode from "qrcode";
-import { getSetting, setSetting } from "./admin.repository.js";
+import pool from "../../config/db.js";
 
-const ADMIN_SECRET = () => process.env.ADMIN_PASSWORD || "admin";
+const JWT_SECRET = () => process.env.JWT_SECRET || "admin-fallback-secret";
 const SESSION_DURATION = 30 * 60; // 30분 (초)
 const SESSION_DURATION_MS = SESSION_DURATION * 1000;
+
+// ── DB 헬퍼 ──
+
+async function findAdminByUsername(username) {
+  const { rows } = await pool.query(
+    "SELECT * FROM admin_users WHERE username = $1",
+    [username]
+  );
+  return rows[0] || null;
+}
+
+async function setTotpSecret(userId, secret) {
+  await pool.query(
+    "UPDATE admin_users SET totp_secret = $1, updated_at = NOW() WHERE id = $2",
+    [secret, userId]
+  );
+}
+
+// ── 미들웨어 ──
 
 /**
  * 관리자 인증 미들웨어
  * - JWT 검증
- * - 30분 세션 타임아웃 (슬라이딩 윈도우: 매 요청마다 토큰 갱신)
+ * - 30분 세션 타임아웃 (슬라이딩 윈도우)
  */
 export function adminAuth(req, res, next) {
   const token =
@@ -24,17 +44,18 @@ export function adminAuth(req, res, next) {
   }
 
   try {
-    const decoded = jwt.verify(token, ADMIN_SECRET());
+    const decoded = jwt.verify(token, JWT_SECRET());
 
-    // 2FA 미완료 임시 토큰은 접근 차단
     if (decoded.pending_2fa) {
       return res.status(403).json({ message: "2FA verification required" });
     }
 
-    // 슬라이딩 윈도우: 새 토큰 발급하여 쿠키 갱신
-    const newToken = jwt.sign({ role: "admin" }, ADMIN_SECRET(), {
-      expiresIn: SESSION_DURATION,
-    });
+    // 슬라이딩 윈도우: 새 토큰 발급
+    const newToken = jwt.sign(
+      { role: "admin", userId: decoded.userId, username: decoded.username },
+      JWT_SECRET(),
+      { expiresIn: SESSION_DURATION }
+    );
     res.cookie("admin_token", newToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -42,36 +63,45 @@ export function adminAuth(req, res, next) {
       maxAge: SESSION_DURATION_MS,
     });
 
+    req.adminUser = { id: decoded.userId, username: decoded.username };
     next();
   } catch {
     return res.status(403).json({ message: "Session expired. Please login again." });
   }
 }
 
+// ── 엔드포인트 ──
+
 /**
- * 1단계: 비밀번호 로그인
- * - 비밀번호 확인 후 2FA 상태에 따라 분기
+ * 1단계: 아이디 + 비밀번호 로그인
  */
 export async function loginAdmin(req, res) {
-  const { password } = req.body;
-  if (!password || password !== process.env.ADMIN_PASSWORD) {
-    return res.status(401).json({ message: "Invalid password" });
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({ message: "Username and password are required" });
   }
 
-  // 2FA 설정 여부 확인
-  const totpSecret = await getSetting("admin_totp_secret");
+  const user = await findAdminByUsername(username);
+  if (!user) {
+    return res.status(401).json({ message: "Invalid username or password" });
+  }
 
-  if (!totpSecret) {
-    // 2FA 미설정 → 새 secret 생성 + QR 코드 반환
+  const isMatch = await bcrypt.compare(password, user.password_hash);
+  if (!isMatch) {
+    return res.status(401).json({ message: "Invalid username or password" });
+  }
+
+  if (!user.totp_secret) {
+    // 2FA 미설정 → QR 코드 생성
     const secret = speakeasy.generateSecret({
-      name: "CreatorLink Admin",
+      name: `CreatorLink Admin (${username})`,
       issuer: "CreatorLink",
     });
 
-    // 임시 토큰 (2FA 설정 완료 전까지만 유효, 5분)
     const tempToken = jwt.sign(
-      { role: "admin", pending_2fa: true, temp_secret: secret.base32 },
-      ADMIN_SECRET(),
+      { role: "admin", pending_2fa: true, userId: user.id, username: user.username, temp_secret: secret.base32 },
+      JWT_SECRET(),
       { expiresIn: "5m" }
     );
 
@@ -83,14 +113,14 @@ export async function loginAdmin(req, res) {
       setup_required: true,
       temp_token: tempToken,
       qr_url: qrUrl,
-      secret_manual: secret.base32, // 수동 입력용
+      secret_manual: secret.base32,
     });
   }
 
   // 2FA 설정됨 → OTP 입력 요구
   const tempToken = jwt.sign(
-    { role: "admin", pending_2fa: true },
-    ADMIN_SECRET(),
+    { role: "admin", pending_2fa: true, userId: user.id, username: user.username },
+    JWT_SECRET(),
     { expiresIn: "5m" }
   );
 
@@ -104,8 +134,6 @@ export async function loginAdmin(req, res) {
 
 /**
  * 2단계: OTP 검증
- * - 최초 설정 시 secret을 DB에 저장
- * - 검증 성공 시 본 세션 토큰 발급
  */
 export async function verifyOtp(req, res) {
   const { otp, temp_token } = req.body;
@@ -114,10 +142,9 @@ export async function verifyOtp(req, res) {
     return res.status(400).json({ message: "OTP and temp_token are required" });
   }
 
-  // 임시 토큰 검증
   let decoded;
   try {
-    decoded = jwt.verify(temp_token, ADMIN_SECRET());
+    decoded = jwt.verify(temp_token, JWT_SECRET());
   } catch {
     return res.status(403).json({ message: "Temporary session expired. Please login again." });
   }
@@ -126,13 +153,13 @@ export async function verifyOtp(req, res) {
     return res.status(400).json({ message: "Invalid token" });
   }
 
-  // secret 결정: 최초 설정이면 토큰에서, 기존이면 DB에서
+  // secret 결정
   let secret;
   if (decoded.temp_secret) {
-    // 최초 설정 중
     secret = decoded.temp_secret;
   } else {
-    secret = await getSetting("admin_totp_secret");
+    const user = await findAdminByUsername(decoded.username);
+    secret = user?.totp_secret;
     if (!secret) {
       return res.status(400).json({ message: "2FA not configured" });
     }
@@ -143,22 +170,24 @@ export async function verifyOtp(req, res) {
     secret,
     encoding: "base32",
     token: otp,
-    window: 1, // ±30초 허용
+    window: 1,
   });
 
   if (!verified) {
     return res.status(401).json({ message: "Invalid OTP code" });
   }
 
-  // 최초 설정이면 secret을 DB에 저장
+  // 최초 설정이면 DB에 저장
   if (decoded.temp_secret) {
-    await setSetting("admin_totp_secret", secret);
+    await setTotpSecret(decoded.userId, secret);
   }
 
-  // 본 세션 토큰 발급 (30분)
-  const token = jwt.sign({ role: "admin" }, ADMIN_SECRET(), {
-    expiresIn: SESSION_DURATION,
-  });
+  // 본 세션 토큰 발급
+  const token = jwt.sign(
+    { role: "admin", userId: decoded.userId, username: decoded.username },
+    JWT_SECRET(),
+    { expiresIn: SESSION_DURATION }
+  );
   res.cookie("admin_token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -166,5 +195,5 @@ export async function verifyOtp(req, res) {
     maxAge: SESSION_DURATION_MS,
   });
 
-  res.json({ success: true });
+  res.json({ success: true, username: decoded.username });
 }
