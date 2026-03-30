@@ -45,9 +45,25 @@ function calcProgressPercent() {
   return (idx * segmentSize) + (withinSegment * segmentSize);
 }
 
+function formatDate(dateStr) {
+  const d = new Date(dateStr);
+  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+}
+
 function render() {
   document.getElementById("gradeLabel").textContent = `${state.grade} AMBASSADOR`;
   document.getElementById("salesValue").textContent = formatNumber(state.sales);
+
+  // 관리자 등급 부여 안내
+  const lockEl = document.getElementById("gradeLockInfo");
+  if (lockEl) {
+    if (state.gradeLockedUntil && new Date(state.gradeLockedUntil) > new Date()) {
+      lockEl.textContent = `관리자 등급 부여 (${formatDate(state.gradeLockedUntil)}까지 유지)`;
+      lockEl.style.display = "block";
+    } else {
+      lockEl.style.display = "none";
+    }
+  }
 
   setActiveTier();
 
@@ -112,6 +128,7 @@ async function loadDashboard() {
     state.grade  = data.grade_name || "BRONZE";
     state.points = parseFloat(data.current_points) || 0;
     state.sales  = parseInt(data.sales_last_60days, 10) || 0;
+    state.gradeLockedUntil = data.grade_locked_until || null;
 
     render();
   } catch (err) {
