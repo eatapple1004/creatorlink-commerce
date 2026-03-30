@@ -1,9 +1,9 @@
 const THRESHOLDS = {
   BRONZE:   0,
-  SILVER:   300000,
-  GOLD:     600000,
-  PLATINUM: 1000000,
-  DIAMOND:  2000000,
+  SILVER:   20,
+  GOLD:     50,
+  PLATINUM: 200,
+  DIAMOND:  500,
 };
 
 const TIER_ORDER = ["BRONZE", "SILVER", "GOLD", "PLATINUM", "DIAMOND"];
@@ -103,7 +103,7 @@ async function loadDashboard() {
 
     state.grade  = data.grade_name || "BRONZE";
     state.points = parseFloat(data.current_points) || 0;
-    state.sales  = parseFloat(data.sales_last_60days) || 0;
+    state.sales  = parseInt(data.sales_last_60days, 10) || 0;
 
     render();
   } catch (err) {

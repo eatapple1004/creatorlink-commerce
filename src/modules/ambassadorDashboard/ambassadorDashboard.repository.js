@@ -13,7 +13,7 @@ export const getAmbassadorDashboardData = async (ambassadorId) => {
       UPPER(g.code) AS grade_name,
       g.commission_rate,
       COALESCE((
-        SELECT SUM(ow.total_price)
+        SELECT COUNT(*)
         FROM order_webhook ow
         WHERE ow.ambassador_id = ap.id
           AND ow.paid = true
