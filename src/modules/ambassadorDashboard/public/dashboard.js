@@ -28,14 +28,21 @@ function setActiveTier() {
 }
 
 function calcProgressPercent() {
+  // 전체 등급 구간에서의 절대 위치 계산
+  // 각 등급 구간은 균등 분배 (5등급 = 각 25%)
+  const segmentSize = 100 / (TIER_ORDER.length - 1); // 25%
   const idx = TIER_ORDER.indexOf(state.grade);
-  const min = THRESHOLDS[TIER_ORDER[idx]] ?? 0;
-  const nextTier = TIER_ORDER[idx + 1];
+
   // 최고 등급이면 100%
-  if (!nextTier) return 100;
-  const max = THRESHOLDS[nextTier];
-  const p = Math.max(0, Math.min(1, (state.sales - min) / (max - min)));
-  return p * 100;
+  if (idx === TIER_ORDER.length - 1) return 100;
+
+  const min = THRESHOLDS[TIER_ORDER[idx]] ?? 0;
+  const max = THRESHOLDS[TIER_ORDER[idx + 1]];
+  // 관리자 강제 부여 시 건수가 기준 미달이면 등급 시작점 사용
+  const sales = Math.max(state.sales, min);
+  const withinSegment = Math.max(0, Math.min(1, (sales - min) / (max - min)));
+
+  return (idx * segmentSize) + (withinSegment * segmentSize);
 }
 
 function render() {
