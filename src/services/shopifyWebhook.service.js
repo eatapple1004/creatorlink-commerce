@@ -168,7 +168,7 @@ export const processOrderPaid = async (order) => {
     taxAmount,
   });
 
-  // ambassador 존재 시 포인트 적립 시도
+  // ambassador 존재 시 포인트 적립 + 등급 업데이트
   if (saved?.ambassador_id && totalPrice !== null) {
     // 기프트카드 결제 금액 조회
     const orderRecord = await orderWebhookRepo.findOrderById(orderId);
@@ -218,6 +218,18 @@ export const processOrderPaid = async (order) => {
       } else {
         logger.info(`🟩 [Shopify] 포인트 적립 완료 → order_id=${orderId}`);
       }
+    }
+  }
+
+  // 등급 자동 업데이트 (할인코드가 있는 경우 = 엠버서더 연결 주문)
+  if (saved?.ambassador_id) {
+    try {
+      const gradeResult = await orderWebhookRepo.updateGradeByOrderCount(saved.ambassador_id);
+      if (gradeResult.updated) {
+        logger.info(`⬆️ [Shopify] 등급 업데이트 → ambassador_id=${saved.ambassador_id}, orders=${gradeResult.orderCount}, grade=${gradeResult.newGrade}`);
+      }
+    } catch (err) {
+      logger.error(`🟥 [Shopify] 등급 업데이트 실패 → ambassador_id=${saved.ambassador_id}`, err);
     }
   }
 
