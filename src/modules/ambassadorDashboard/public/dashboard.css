@@ -78,6 +78,7 @@
   }
   .footerLink{ color:#222; text-decoration:none; }
   .footerLink:hover{ text-decoration:underline; }
+  .footerLogout{ margin-left:auto; color:var(--muted); }
   
   @media (max-width:640px){
     .pointsValue{ font-size:38px; }
