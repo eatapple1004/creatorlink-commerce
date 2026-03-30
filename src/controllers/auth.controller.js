@@ -36,6 +36,20 @@ export const registerUser = async (req, res) => {
 /**
  * 로그인 컨트롤러 (JWT 발급)
  */
+/**
+ * 로그아웃 컨트롤러 (httpOnly 쿠키 삭제)
+ */
+export const logoutUser = (req, res) => {
+  res.clearCookie("ambassador_token", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    domain: ".adamthefirstsin.com",
+    path: "/",
+  });
+  res.status(200).json({ message: "로그아웃 성공" });
+};
+
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;

@@ -125,10 +125,15 @@ document.getElementById("btnCustomize")?.addEventListener("click", (e) => {
   alert("커스터마이징 기능은 다음 단계에서 연결합니다.");
 });
 
-document.getElementById("btnLogout")?.addEventListener("click", (e) => {
+document.getElementById("btnLogout")?.addEventListener("click", async (e) => {
   e.preventDefault();
+  try {
+    await fetch("https://api.adamthefirstsin.com/api/auth/logout", {
+      method: "POST",
+      credentials: "include",
+    });
+  } catch (_) {}
   localStorage.removeItem("ambassador_token");
-  document.cookie = "ambassador_token=; Max-Age=0; path=/; domain=.adamthefirstsin.com";
   window.location.href = "/pages/ambassador-login";
 });
 
