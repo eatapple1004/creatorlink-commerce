@@ -129,28 +129,36 @@
   var btn = document.getElementById('amb-login-btn');
   var errorEl = document.getElementById('amb-login-error');
 
-  // 이미 로그인된 경우 토큰 유효성 검증 후 리다이렉트
-  var existingToken = localStorage.getItem('ambassador_token');
-  if (existingToken) {
-    fetch(API_ORIGIN + '/api/auth/profile', {
-      headers: { 'Authorization': 'Bearer ' + existingToken },
-      credentials: 'include'
-    })
-    .then(function (res) {
-      if (res.ok) {
-        window.location.href = REDIRECT_PAGE;
-      } else {
-        localStorage.removeItem('ambassador_token');
-        // Cookie도 정리
-        fetch(API_ORIGIN + '/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(function () {});
-      }
-    })
-    .catch(function () {
-      localStorage.removeItem('ambassador_token');
-    });
-  } else {
-    // localStorage 없으면 Cookie도 정리 (로그아웃 후 남아있는 Cookie 방지)
+  // 로그아웃 직후인지 확인
+  var params = new URLSearchParams(window.location.search);
+  var isLogout = params.get('logout') === '1';
+
+  if (isLogout) {
+    // 로그아웃 직후: 토큰 + 쿠키 모두 정리, 리다이렉트 하지 않음
+    localStorage.removeItem('ambassador_token');
     fetch(API_ORIGIN + '/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(function () {});
+    // URL에서 ?logout=1 제거
+    history.replaceState(null, '', window.location.pathname);
+  } else {
+    // 일반 접근: 이미 로그인된 경우 토큰 유효성 검증 후 리다이렉트
+    var existingToken = localStorage.getItem('ambassador_token');
+    if (existingToken) {
+      fetch(API_ORIGIN + '/api/auth/profile', {
+        headers: { 'Authorization': 'Bearer ' + existingToken },
+        credentials: 'include'
+      })
+      .then(function (res) {
+        if (res.ok) {
+          window.location.href = REDIRECT_PAGE;
+        } else {
+          localStorage.removeItem('ambassador_token');
+          fetch(API_ORIGIN + '/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(function () {});
+        }
+      })
+      .catch(function () {
+        localStorage.removeItem('ambassador_token');
+      });
+    }
   }
 
   form.addEventListener('submit', function () {
