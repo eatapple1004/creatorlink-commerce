@@ -4,6 +4,7 @@ import {
   registerBeneficiaryService,
   submitWithdrawalService,
 } from "./pointsSettlement.service.js";
+import { deactivateBeneficiary } from "./pointsSettlement.repository.js";
 import { getTaxInfoSummary, upsertTaxInfo } from "./taxInfo.repository.js";
 import { encrypt } from "../../utils/encryption.js";
 
@@ -140,6 +141,20 @@ export async function submitWithdrawal(req, res) {
       message: err.message || "출금 요청에 실패했습니다.",
       detail: err.detail || null,
     });
+  }
+}
+
+/**
+ * 정산 계좌 비활성화 (계좌 변경 시)
+ * DELETE /iframe/ambassador/api/settlement/beneficiary
+ */
+export async function deleteBeneficiary(req, res) {
+  try {
+    await deactivateBeneficiary(req.user.id);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("❌ deleteBeneficiary error:", err.message);
+    res.status(500).json({ message: "계좌 해제에 실패했습니다." });
   }
 }
 

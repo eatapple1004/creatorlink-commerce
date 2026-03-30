@@ -6,6 +6,7 @@ import {
   getSettlementData,
   getBeneficiary,
   registerBeneficiary,
+  deleteBeneficiary,
   submitWithdrawal,
   getTaxInfoHandler,
   registerTaxInfo,
@@ -34,6 +35,8 @@ router.get("/api/settlement",              verifyToken, getSettlementData);
 router.get("/api/settlement/beneficiary",  verifyToken, getBeneficiary);
 // 수취인 계좌 등록
 router.post("/api/settlement/beneficiary", verifyToken, registerBeneficiary);
+// 수취인 계좌 비활성화 (변경 시)
+router.delete("/api/settlement/beneficiary", verifyToken, deleteBeneficiary);
 // 출금 요청
 router.post("/api/settlement/withdraw",    verifyToken, submitWithdrawal);
 // 세무정보 조회

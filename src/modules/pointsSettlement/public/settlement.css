@@ -151,6 +151,19 @@ body {
   letter-spacing: .04em;
 }
 
+.btnToggleAccount {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-size: 10px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 2px 8px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.btnToggleAccount:hover { color: var(--text); border-color: #999; }
+
 .changeAccountLink {
   font-size: 11px;
   color: var(--muted);

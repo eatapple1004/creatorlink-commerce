@@ -46,6 +46,7 @@ export const getActiveBankAccount = async (ambassadorId) => {
     SELECT
       account_name,
       account_number_masked,
+      request_payload->'beneficiary'->'bank_details'->>'account_number' AS account_number_full,
       routing_type1,
       routing_value1,
       bank_country_code,
@@ -58,6 +59,18 @@ export const getActiveBankAccount = async (ambassadorId) => {
     [ambassadorId]
   );
   return rows[0] || null;
+};
+
+/**
+ * 기존 활성 계좌 비활성화 (계좌 변경 시)
+ */
+export const deactivateBeneficiary = async (ambassadorId) => {
+  await pool.query(
+    `UPDATE airwallex_beneficiary
+     SET is_active = false, updated_at = NOW()
+     WHERE ambassador_idx = $1 AND is_active = true`,
+    [ambassadorId]
+  );
 };
 
 /**

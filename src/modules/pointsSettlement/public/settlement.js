@@ -61,19 +61,31 @@ function renderPoints(data) {
   document.getElementById("lockedPoints").textContent       = fmt(data.locked_points)       + "points";
 }
 
+let bankData = null;
+let accountNumberVisible = false;
+
 function renderBankAccount(bank) {
+  bankData = bank;
+  accountNumberVisible = false;
   const filled = document.getElementById("bankInfoFilled");
   const empty  = document.getElementById("bankInfoEmpty");
+  const changeLink = document.getElementById("btnChangeAccount");
   if (!bank) {
     filled.style.display = "none";
     empty.style.display  = "block";
+    changeLink.classList.add("disabled");
     return;
   }
   filled.style.display = "block";
   empty.style.display  = "none";
+  changeLink.classList.remove("disabled");
   document.getElementById("bankAccountName").textContent = bank.account_name || "-";
   document.getElementById("bankInstitute").textContent   = bank.routing_value1 || bank.routing_type1 || "-";
   document.getElementById("bankNumber").textContent      = bank.account_number_masked || "-";
+
+  // 계좌번호 토글 버튼 추가
+  const toggleBtn = document.getElementById("btnToggleAccount");
+  if (toggleBtn) toggleBtn.textContent = "보기";
 }
 
 function renderPending(pending) {
@@ -508,6 +520,43 @@ document.getElementById("btnTaxSubmit").addEventListener("click", async () => {
   } finally {
     btn.disabled = false;
     btn.textContent = "등록하기";
+  }
+});
+
+/* ─────────────────────────────────────
+   계좌번호 보기/숨기기 토글
+───────────────────────────────────── */
+document.getElementById("btnToggleAccount")?.addEventListener("click", () => {
+  if (!bankData) return;
+  accountNumberVisible = !accountNumberVisible;
+  document.getElementById("bankNumber").textContent = accountNumberVisible
+    ? (bankData.account_number_full || bankData.account_number_masked || "-")
+    : (bankData.account_number_masked || "-");
+  document.getElementById("btnToggleAccount").textContent = accountNumberVisible ? "숨기기" : "보기";
+});
+
+/* ─────────────────────────────────────
+   정산 계좌 변경
+───────────────────────────────────── */
+document.getElementById("btnChangeAccount")?.addEventListener("click", async (e) => {
+  e.preventDefault();
+  if (!state.token || !bankData) return;
+  if (!confirm("기존 계좌를 해제하고 새 계좌를 등록하시겠습니까?")) return;
+
+  try {
+    const res = await authFetch(`${API_BASE}/api/settlement/beneficiary`, {
+      method: "DELETE",
+    });
+    if (!res.ok) {
+      const body = await res.json();
+      alert(body.message || "계좌 해제에 실패했습니다.");
+      return;
+    }
+    alert("기존 계좌가 해제되었습니다. 새 계좌를 등록해주세요.");
+    openRegisterFlow();
+    loadSettlement();
+  } catch {
+    alert("네트워크 오류가 발생했습니다.");
   }
 });
 
