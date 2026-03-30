@@ -83,7 +83,12 @@ export const getAllGrades = async () => {
 
 export const updateAmbassadorGrade = async (ambassadorId, gradeId) => {
   const { rows } = await pool.query(
-    "UPDATE ambassador_profile SET grade_id = $1, updated_at = NOW() WHERE id = $2 RETURNING id, grade_id",
+    `UPDATE ambassador_profile
+     SET grade_id = $1,
+         grade_locked_until = NOW() + INTERVAL '60 days',
+         updated_at = NOW()
+     WHERE id = $2
+     RETURNING id, grade_id, grade_locked_until`,
     [gradeId, ambassadorId]
   );
   return rows[0] || null;

@@ -105,6 +105,28 @@ export const addGiftCardAmount = async (orderId, amount) => {
  * ambassador_profile.grade_id         → 건수 기준 등급 반영 (ambassador_grade.min_orders 기준)
  */
 export const updateGradeByOrderCount = async (ambassadorId) => {
+  // 0) 관리자 등급 잠금 확인
+  const lockRes = await pool.query(
+    "SELECT grade_locked_until FROM ambassador_profile WHERE id = $1",
+    [ambassadorId]
+  );
+  const lockedUntil = lockRes.rows[0]?.grade_locked_until;
+  if (lockedUntil && new Date(lockedUntil) > new Date()) {
+    // 건수만 업데이트, 등급은 변경하지 않음
+    const countSql = `
+      SELECT COUNT(*)::int AS count
+      FROM order_webhook
+      WHERE ambassador_id = $1 AND paid = TRUE AND created_at >= NOW() - INTERVAL '60 days'
+    `;
+    const countRes = await pool.query(countSql, [ambassadorId]);
+    const orderCount = countRes.rows[0]?.count ?? 0;
+    await pool.query(
+      "UPDATE ambassador_profile SET sales_count_60d = $2, updated_at = NOW() WHERE id = $1",
+      [ambassadorId, orderCount]
+    );
+    return { ambassadorId, orderCount, newGrade: null, updated: false, locked: true };
+  }
+
   // 1) 최근 60일 판매 건수 재계산
   const countSql = `
     SELECT COUNT(*)::int AS count

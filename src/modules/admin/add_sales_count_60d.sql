@@ -12,3 +12,7 @@ UPDATE ambassador_grade SET min_orders = 20  WHERE LOWER(code) = 'silver';
 UPDATE ambassador_grade SET min_orders = 50  WHERE LOWER(code) = 'gold';
 UPDATE ambassador_grade SET min_orders = 200 WHERE LOWER(code) = 'platinum';
 UPDATE ambassador_grade SET min_orders = 500 WHERE LOWER(code) = 'diamond';
+
+-- 관리자 등급 부여 시 60일 잠금용 컬럼
+ALTER TABLE ambassador_profile
+  ADD COLUMN IF NOT EXISTS grade_locked_until TIMESTAMP DEFAULT NULL;

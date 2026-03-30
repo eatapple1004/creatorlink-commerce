@@ -225,7 +225,9 @@ export const processOrderPaid = async (order) => {
   if (saved?.ambassador_id) {
     try {
       const gradeResult = await orderWebhookRepo.updateGradeByOrderCount(saved.ambassador_id);
-      if (gradeResult.updated) {
+      if (gradeResult.locked) {
+        logger.info(`🔒 [Shopify] 등급 잠금 중(관리자 지정) → ambassador_id=${saved.ambassador_id}, orders=${gradeResult.orderCount}`);
+      } else if (gradeResult.updated) {
         logger.info(`⬆️ [Shopify] 등급 업데이트 → ambassador_id=${saved.ambassador_id}, orders=${gradeResult.orderCount}, grade=${gradeResult.newGrade}`);
       }
     } catch (err) {
