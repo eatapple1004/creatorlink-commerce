@@ -133,7 +133,8 @@
   var existingToken = localStorage.getItem('ambassador_token');
   if (existingToken) {
     fetch(API_ORIGIN + '/api/auth/profile', {
-      headers: { 'Authorization': 'Bearer ' + existingToken }
+      headers: { 'Authorization': 'Bearer ' + existingToken },
+      credentials: 'include'
     })
     .then(function (res) {
       if (res.ok) {
@@ -146,6 +147,21 @@
     .catch(function () {
       localStorage.removeItem('ambassador_token');
     });
+  } else {
+    // localStorage 토큰 없어도 Cookie로 인증될 수 있으므로 체크
+    fetch(API_ORIGIN + '/api/auth/profile', {
+      credentials: 'include'
+    })
+    .then(function (res) {
+      if (res.ok) {
+        // Cookie 유효 → 로그아웃이 안 된 상태이므로 Cookie 삭제
+        return fetch(API_ORIGIN + '/api/auth/logout', {
+          method: 'POST',
+          credentials: 'include'
+        });
+      }
+    })
+    .catch(function () {});
   }
 
   form.addEventListener('submit', function () {
