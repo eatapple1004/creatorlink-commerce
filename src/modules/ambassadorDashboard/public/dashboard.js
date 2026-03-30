@@ -135,7 +135,7 @@ document.getElementById("btnLogout")?.addEventListener("click", async (e) => {
     });
   } catch (_) {}
   localStorage.removeItem("ambassador_token");
-  window.location.href = "https://adamthefirstsin.com/pages/ambassador-login";
+  window.top.location.href = "https://kr.adamthefirstsin.com/pages/ambassador-login";
 });
 
 loadDashboard();
