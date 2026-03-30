@@ -140,28 +140,17 @@
       if (res.ok) {
         window.location.href = REDIRECT_PAGE;
       } else {
-        // 토큰 만료/무효 → 삭제하고 로그인 폼 표시
         localStorage.removeItem('ambassador_token');
+        // Cookie도 정리
+        fetch(API_ORIGIN + '/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(function () {});
       }
     })
     .catch(function () {
       localStorage.removeItem('ambassador_token');
     });
   } else {
-    // localStorage 토큰 없어도 Cookie로 인증될 수 있으므로 체크
-    fetch(API_ORIGIN + '/api/auth/profile', {
-      credentials: 'include'
-    })
-    .then(function (res) {
-      if (res.ok) {
-        // Cookie 유효 → 로그아웃이 안 된 상태이므로 Cookie 삭제
-        return fetch(API_ORIGIN + '/api/auth/logout', {
-          method: 'POST',
-          credentials: 'include'
-        });
-      }
-    })
-    .catch(function () {});
+    // localStorage 없으면 Cookie도 정리 (로그아웃 후 남아있는 Cookie 방지)
+    fetch(API_ORIGIN + '/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(function () {});
   }
 
   form.addEventListener('submit', function () {

@@ -93,6 +93,7 @@ async function loadDashboard() {
 
     if (res.status === 401 || res.status === 403) {
       localStorage.removeItem("ambassador_token");
+      fetch("https://api.adamthefirstsin.com/api/auth/logout", { method: "POST", credentials: "include" }).catch(() => {});
       showAuthError("세션이 만료되었습니다. 다시 로그인해주세요.");
       return;
     }
