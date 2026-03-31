@@ -90,22 +90,33 @@ app.get("/", (req, res) => {
 
 // ── 임시 Shopify OAuth 콜백 (토큰 발급용, 발급 후 삭제) ──
 app.get("/api/shopify/oauth/callback", async (req, res) => {
-  const { code, shop } = req.query;
-  if (!code) return res.status(400).send("Missing code");
+  console.log("🔑 [Shopify OAuth] callback query:", req.query);
+  const { code, shop, host } = req.query;
+  if (!code) return res.status(400).send("Missing code. Query: " + JSON.stringify(req.query));
+
+  const storeDomain = shop || "mmjnwe-fr.myshopify.com";
+  const tokenUrl = `https://${storeDomain}/admin/oauth/access_token`;
+  const payload = {
+    client_id: process.env.SHOPIFY_CLIENT_ID || "be82395799ff6c79b9bbd6fb7bad9980",
+    client_secret: process.env.SHOPIFY_CLIENT_SECRET,
+    code,
+  };
+
+  console.log("🔑 [Shopify OAuth] requesting token from:", tokenUrl);
 
   try {
-    const resp = await fetch(`https://mmjnwe-fr.myshopify.com/admin/oauth/access_token`, {
+    const resp = await fetch(tokenUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        client_id: "be82395799ff6c79b9bbd6fb7bad9980",
-        client_secret: process.env.SHOPIFY_CLIENT_SECRET,
-        code,
-      }),
+      body: JSON.stringify(payload),
     });
-    const data = await resp.json();
-    console.log("🔑 [Shopify OAuth] Access Token:", JSON.stringify(data));
-    res.send(`<h2>Access Token 발급 완료</h2><pre>${JSON.stringify(data, null, 2)}</pre><p>이 토큰을 .env에 저장하세요.</p>`);
+    const text = await resp.text();
+    console.log("🔑 [Shopify OAuth] response status:", resp.status, "body:", text);
+
+    let data;
+    try { data = JSON.parse(text); } catch { data = { raw: text }; }
+
+    res.send(`<h2>Shopify OAuth 결과</h2><p>Status: ${resp.status}</p><pre>${JSON.stringify(data, null, 2)}</pre>`);
   } catch (err) {
     console.error("Shopify OAuth error:", err);
     res.status(500).send("OAuth 실패: " + err.message);
