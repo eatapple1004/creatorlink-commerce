@@ -76,7 +76,7 @@ export const getAmbassadorById = async (id) => {
 
 export const getAllGrades = async () => {
   const { rows } = await pool.query(
-    "SELECT id, code, commission_rate, min_orders FROM ambassador_grade ORDER BY min_orders ASC"
+    "SELECT id, code, commission_rate, min_orders, discount_rate FROM ambassador_grade ORDER BY min_orders ASC"
   );
   return rows;
 };
