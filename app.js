@@ -85,40 +85,60 @@ app.listen(process.env.PORT || 8080, () => {
 });
 
 app.get("/", (req, res) => {
+    // Shopify Admin에서 앱 로드 시 → 토큰 캡처 페이지
+    if (req.query.shop || req.query.host) {
+      return res.send(`<!DOCTYPE html>
+<html><head>
+  <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
+</head><body>
+  <h2>Shopify Token Exchange...</h2>
+  <pre id="result">처리 중...</pre>
+  <script>
+    (async () => {
+      try {
+        const idToken = await shopify.idToken();
+        document.getElementById("result").textContent = "id_token 획득 완료. 교환 중...";
+        const res = await fetch("/api/shopify/token-exchange?id_token=" + encodeURIComponent(idToken));
+        const text = await res.text();
+        document.getElementById("result").innerHTML = text;
+      } catch (e) {
+        document.getElementById("result").textContent = "에러: " + e.message;
+      }
+    })();
+  </script>
+</body></html>`);
+    }
     res.send("Creatorlink Commerce Server is running successfully!");
 });
 
-// ── 임시 Shopify OAuth 콜백 (토큰 발급용, 발급 후 삭제) ──
+// ── 임시 Shopify 토큰 교환 (embedded app용, 발급 후 삭제) ──
 app.get("/api/shopify/oauth/callback", async (req, res) => {
   console.log("🔑 [Shopify OAuth] callback query:", req.query);
-  const { code, shop, host } = req.query;
-  if (!code) return res.status(400).send("Missing code. Query: " + JSON.stringify(req.query));
+  res.send("OK - query: " + JSON.stringify(req.query));
+});
 
-  const storeDomain = shop || "mmjnwe-fr.myshopify.com";
-  const tokenUrl = `https://${storeDomain}/admin/oauth/access_token`;
-  const payload = {
-    client_id: process.env.SHOPIFY_CLIENT_ID || "be82395799ff6c79b9bbd6fb7bad9980",
-    client_secret: process.env.SHOPIFY_CLIENT_SECRET,
-    code,
-  };
-
-  console.log("🔑 [Shopify OAuth] requesting token from:", tokenUrl);
+app.get("/api/shopify/token-exchange", async (req, res) => {
+  const idToken = req.query.id_token;
+  if (!idToken) return res.status(400).send("Missing id_token param");
 
   try {
-    const resp = await fetch(tokenUrl, {
+    const resp = await fetch("https://mmjnwe-fr.myshopify.com/admin/oauth/access_token", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        client_id: process.env.SHOPIFY_CLIENT_ID,
+        client_secret: process.env.SHOPIFY_CLIENT_SECRET,
+        grant_type: "urn:ietf:params:oauth:grant-type:token-exchange",
+        subject_token: idToken,
+        subject_token_type: "urn:ietf:params:oauth:token-type:id-token",
+        requested_token_type: "urn:shopify:params:oauth:token-type:offline-access-token",
+      }),
     });
     const text = await resp.text();
-    console.log("🔑 [Shopify OAuth] response status:", resp.status, "body:", text);
-
-    let data;
-    try { data = JSON.parse(text); } catch { data = { raw: text }; }
-
-    res.send(`<h2>Shopify OAuth 결과</h2><p>Status: ${resp.status}</p><pre>${JSON.stringify(data, null, 2)}</pre>`);
+    console.log("🔑 [Shopify Token Exchange] status:", resp.status, "body:", text);
+    res.send(`<h2>Token Exchange 결과</h2><p>Status: ${resp.status}</p><pre>${text}</pre>`);
   } catch (err) {
-    console.error("Shopify OAuth error:", err);
-    res.status(500).send("OAuth 실패: " + err.message);
+    console.error("Token exchange error:", err);
+    res.status(500).send("실패: " + err.message);
   }
 });
