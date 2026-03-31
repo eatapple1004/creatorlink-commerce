@@ -1,5 +1,6 @@
 import * as service from "./admin.service.js";
 import { getAllGrades, updateAmbassadorGrade } from "./admin.repository.js";
+import { updateDiscountRate } from "../../services/shopifyDiscount.service.js";
 import { getTaxInfo } from "../pointsSettlement/taxInfo.repository.js";
 import { decrypt } from "../../utils/encryption.js";
 
@@ -175,6 +176,16 @@ export async function changeAmbassadorGrade(req, res) {
     const result = await updateAmbassadorGrade(id, Number(grade_id));
     if (!result) {
       return res.status(404).json({ message: "Ambassador not found" });
+    }
+    // Shopify 할인율도 업데이트
+    try {
+      const grades = await getAllGrades();
+      const grade = grades.find(g => g.id === Number(grade_id));
+      if (grade?.discount_rate) {
+        await updateDiscountRate({ ambassadorId: id, discountRate: Number(grade.discount_rate) });
+      }
+    } catch (discountErr) {
+      console.error("Shopify 할인율 업데이트 실패:", discountErr.message);
     }
     res.json({ success: true, result });
   } catch (err) {

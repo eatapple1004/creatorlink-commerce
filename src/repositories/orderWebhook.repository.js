@@ -138,9 +138,16 @@ export const updateGradeByOrderCount = async (ambassadorId) => {
   const countRes = await pool.query(countSql, [ambassadorId]);
   const orderCount = countRes.rows[0]?.count ?? 0;
 
-  // 2) DB에서 등급 기준 조회 → 건수에 맞는 최고 등급 결정
+  // 2) 현재 등급 조회
+  const currentRes = await pool.query(
+    "SELECT grade_id FROM ambassador_profile WHERE id = $1",
+    [ambassadorId]
+  );
+  const currentGradeId = currentRes.rows[0]?.grade_id;
+
+  // 3) DB에서 등급 기준 조회 → 건수에 맞는 최고 등급 결정
   const gradeSql = `
-    SELECT id, code, min_orders
+    SELECT id, code, min_orders, discount_rate
     FROM ambassador_grade
     WHERE min_orders <= $1
     ORDER BY min_orders DESC
@@ -151,7 +158,9 @@ export const updateGradeByOrderCount = async (ambassadorId) => {
 
   if (!targetGrade) return { ambassadorId, orderCount, newGrade: null, updated: false };
 
-  // 3) 건수 + 등급 한번에 업데이트
+  const gradeChanged = currentGradeId !== targetGrade.id;
+
+  // 4) 건수 + 등급 한번에 업데이트
   const sql = `
     UPDATE ambassador_profile
     SET sales_count_60d = $2,
@@ -161,7 +170,11 @@ export const updateGradeByOrderCount = async (ambassadorId) => {
     RETURNING id, grade_id, sales_count_60d
   `;
   const res = await pool.query(sql, [ambassadorId, orderCount, targetGrade.id]);
-  return { ambassadorId, orderCount, newGrade: targetGrade.code, updated: res.rowCount > 0 };
+  return {
+    ambassadorId, orderCount, newGrade: targetGrade.code,
+    updated: res.rowCount > 0, gradeChanged,
+    discountRate: Number(targetGrade.discount_rate),
+  };
 };
 
 export const markPaid = async (orderId, amount, currency) => {

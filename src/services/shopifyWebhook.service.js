@@ -2,6 +2,7 @@
 import * as ambassadorRepo from "../repositories/ambassador.repository.js";
 import * as orderWebhookRepo from "../repositories/orderWebhook.repository.js";
 import * as pointsService from "./points.service.js";
+import { updateDiscountRate } from "./shopifyDiscount.service.js";
 import logger from "../config/logger.js";
 
 /**
@@ -227,8 +228,17 @@ export const processOrderPaid = async (order) => {
       const gradeResult = await orderWebhookRepo.updateGradeByOrderCount(saved.ambassador_id);
       if (gradeResult.locked) {
         logger.info(`🔒 [Shopify] 등급 잠금 중(관리자 지정) → ambassador_id=${saved.ambassador_id}, orders=${gradeResult.orderCount}`);
-      } else if (gradeResult.updated) {
+      } else if (gradeResult.gradeChanged) {
         logger.info(`⬆️ [Shopify] 등급 업데이트 → ambassador_id=${saved.ambassador_id}, orders=${gradeResult.orderCount}, grade=${gradeResult.newGrade}`);
+        // 등급 변경 시 Shopify 할인율도 업데이트
+        try {
+          await updateDiscountRate({
+            ambassadorId: saved.ambassador_id,
+            discountRate: gradeResult.discountRate,
+          });
+        } catch (discountErr) {
+          logger.error(`🟥 [Shopify] 할인율 업데이트 실패 → ambassador_id=${saved.ambassador_id}`, discountErr);
+        }
       }
     } catch (err) {
       logger.error(`🟥 [Shopify] 등급 업데이트 실패 → ambassador_id=${saved.ambassador_id}`, err);

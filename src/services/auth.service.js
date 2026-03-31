@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { findUserByEmail, insertUser, insertInitialPoints } from "../repositories/auth.repository.js";
 import { generateReferralCode } from "../utils/referralCode.js";
+import { createDiscountCode } from "./shopifyDiscount.service.js";
 
 /**
  * ✅ 회원가입 서비스 (앰버서더 전용)
@@ -27,7 +28,18 @@ export const registerUserService = async ({ name, email, password, paypal_email,
         referral_code,
     });
 
-    // 5️⃣ 반환
+    // 5️⃣ Shopify 할인 코드 생성 (Bronze = 10%)
+    try {
+        await createDiscountCode({
+            ambassadorId: newUser.id,
+            referralCode: referral_code,
+            discountRate: 10,
+        });
+    } catch (err) {
+        console.error("⚠️ Shopify 할인 코드 생성 실패 (회원가입은 정상 처리):", err.message);
+    }
+
+    // 6️⃣ 반환
     return {
         id: newUser.id,
         name: newUser.name,
