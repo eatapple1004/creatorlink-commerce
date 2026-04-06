@@ -118,6 +118,12 @@
   }
   .ordersTable tbody tr:last-child td{ border-bottom:none; }
   .ordersTable tbody tr:hover{ background:#f9f9fb; }
+  .ordersTable .productName{
+    white-space:normal; word-break:break-word; max-width:280px;
+  }
+  .ordersTable .pointsCell{
+    font-weight:600; color:#2a5cca;
+  }
   .ordersEmpty{
     text-align:center; color:var(--muted); padding:24px 14px !important;
   }

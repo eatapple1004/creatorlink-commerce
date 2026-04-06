@@ -177,26 +177,26 @@ function formatOrderDate(dateStr) {
   return `${yyyy}.${mm}.${dd} ${hh}:${mi}`;
 }
 
-function formatPrice(val, currency) {
-  const n = parseFloat(val) || 0;
-  if (currency === "KRW") return formatNumber(Math.round(n));
-  return n.toFixed(2);
+function getProductNames(lineItems) {
+  if (!lineItems || !Array.isArray(lineItems) || lineItems.length === 0) return "-";
+  return lineItems.map((item) => {
+    const name = item.name || "-";
+    return item.quantity > 1 ? `${name} x${item.quantity}` : name;
+  }).join(", ");
 }
 
 function renderOrders(data) {
   const tbody = document.getElementById("ordersBody");
   if (!data.orders || data.orders.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="ordersEmpty">구매 내역이 없습니다.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="3" class="ordersEmpty">구매 내역이 없습니다.</td></tr>';
     document.getElementById("ordersPaging").innerHTML = "";
     return;
   }
 
   tbody.innerHTML = data.orders.map((o) => `
     <tr>
-      <td>#${o.order_id}</td>
-      <td>${formatPrice(o.total_price, o.currency)}</td>
-      <td>${formatPrice(o.discount_amount, o.currency)}</td>
-      <td>${o.currency || "-"}</td>
+      <td class="productName">${getProductNames(o.line_items)}</td>
+      <td class="pointsCell">+${formatNumber(Math.round(parseFloat(o.earned_points) || 0))}P</td>
       <td>${formatOrderDate(o.created_at)}</td>
     </tr>
   `).join("");

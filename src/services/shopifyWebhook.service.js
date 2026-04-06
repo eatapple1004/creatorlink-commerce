@@ -93,6 +93,14 @@ export const processOrderCreate = async (order) => {
     ambassador = await ambassadorRepo.findByDiscountCode(discountCode);
   }
 
+  // line_items에서 상품명 추출하여 저장
+  const lineItems = (order.line_items || []).map((item) => ({
+    name: item.title || item.name || "",
+    sku: item.sku || "",
+    quantity: Number(item.quantity) || 1,
+    price: Number(item.price) || 0,
+  }));
+
   await orderWebhookRepo.upsertOrder({
     orderId,
     discountCode,
@@ -105,6 +113,7 @@ export const processOrderCreate = async (order) => {
     discountAmount: n(order.total_discounts) ?? null,
     subtotalPrice: n(order.subtotal_price) ?? null,
     taxAmount: n(order.total_tax) ?? null,
+    lineItems: lineItems.length > 0 ? lineItems : null,
   });
 
   logger.info(`🟦 [Shopify] 주문 생성 처리 완료 → order_id=${orderId}`);
@@ -154,6 +163,14 @@ export const processOrderPaid = async (order) => {
     ambassador = await ambassadorRepo.findByDiscountCode(discountCode);
   }
 
+  // line_items에서 상품명 추출하여 저장
+  const lineItems = (order.line_items || []).map((item) => ({
+    name: item.title || item.name || "",
+    sku: item.sku || "",
+    quantity: Number(item.quantity) || 1,
+    price: Number(item.price) || 0,
+  }));
+
   // 주문 정보 확정 저장 (record 없으면 생성)
   const saved = await orderWebhookRepo.upsertOrder({
     orderId,
@@ -167,6 +184,7 @@ export const processOrderPaid = async (order) => {
     discountAmount,
     subtotalPrice,
     taxAmount,
+    lineItems: lineItems.length > 0 ? lineItems : null,
   });
 
   // ambassador 존재 시 포인트 적립 + 등급 업데이트

@@ -36,18 +36,19 @@ export const getAmbassadorOrders = async (ambassadorId, { page = 1, limit = 20 }
 
   const sql = `
     SELECT
-      order_id,
-      total_price,
-      original_price,
-      discount_amount,
-      subtotal_price,
-      tax_amount,
-      gift_card_amount,
-      currency,
-      created_at
-    FROM order_webhook
-    WHERE ambassador_id = $1 AND paid = TRUE
-    ORDER BY created_at DESC
+      ow.order_id,
+      ow.line_items,
+      ow.created_at,
+      COALESCE(tl.earned_points, 0) AS earned_points
+    FROM order_webhook ow
+    LEFT JOIN (
+      SELECT reference_id, SUM(amount) AS earned_points
+      FROM transaction_log
+      WHERE type = 'earn' AND reference_type = 'SHOPIFY_ORDER'
+      GROUP BY reference_id
+    ) tl ON tl.reference_id = ow.order_id::text
+    WHERE ow.ambassador_id = $1 AND ow.paid = TRUE
+    ORDER BY ow.created_at DESC
     LIMIT $2 OFFSET $3
   `;
   const { rows } = await pool.query(sql, [ambassadorId, limit, offset]);

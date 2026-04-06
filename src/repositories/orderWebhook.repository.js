@@ -15,17 +15,18 @@ export const upsertOrder = async ({
   discountAmount = null,
   subtotalPrice = null,
   taxAmount = null,
+  lineItems = null,
 }) => {
   const sql = `
     INSERT INTO order_webhook (
       order_id, discount_code, ambassador_id, paid, currency,
       total_price, original_price, discount_amount, subtotal_price, tax_amount,
-      created_at, updated_at
+      line_items, created_at, updated_at
     )
     VALUES (
       $1, $2, $3, $4, $5,
       $6, $7, $8, $9, $10,
-      NOW(), NOW()
+      $11, NOW(), NOW()
     )
     ON CONFLICT (order_id)
     DO UPDATE SET
@@ -45,6 +46,7 @@ export const upsertOrder = async ({
       discount_amount  = COALESCE(EXCLUDED.discount_amount, order_webhook.discount_amount),
       subtotal_price   = COALESCE(EXCLUDED.subtotal_price, order_webhook.subtotal_price),
       tax_amount       = COALESCE(EXCLUDED.tax_amount, order_webhook.tax_amount),
+      line_items       = COALESCE(EXCLUDED.line_items, order_webhook.line_items),
 
       updated_at = NOW()
     RETURNING *;
@@ -61,6 +63,7 @@ export const upsertOrder = async ({
     discountAmount,
     subtotalPrice,
     taxAmount,
+    lineItems ? JSON.stringify(lineItems) : null,
   ];
 
   const res = await pool.query(sql, values);
