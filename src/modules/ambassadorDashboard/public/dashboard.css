@@ -85,6 +85,58 @@
   .footerLink:hover{ text-decoration:underline; }
   .footerLogout{ margin-left:auto; color:var(--muted); }
   
+  .ordersWrap{
+    width:min(920px,100%);
+    margin:28px auto 0;
+    padding:0 18px;
+  }
+  .ordersHeader{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:12px;
+  }
+  .ordersTitle{
+    font-size:14px; font-weight:600; margin:0;
+  }
+  .ordersTableWrap{
+    overflow-x:auto;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:#fff;
+  }
+  .ordersTable{
+    width:100%; border-collapse:collapse;
+    font-size:12px; white-space:nowrap;
+  }
+  .ordersTable th{
+    background:#fafafa; font-weight:600;
+    padding:10px 14px; text-align:left;
+    border-bottom:1px solid var(--line);
+  }
+  .ordersTable td{
+    padding:9px 14px;
+    border-bottom:1px solid #f0f0f0;
+  }
+  .ordersTable tbody tr:last-child td{ border-bottom:none; }
+  .ordersTable tbody tr:hover{ background:#f9f9fb; }
+  .ordersEmpty{
+    text-align:center; color:var(--muted); padding:24px 14px !important;
+  }
+  .ordersPaging{
+    display:flex; justify-content:center; align-items:center;
+    gap:6px; margin-top:12px;
+  }
+  .pageBtn{
+    min-width:30px; height:28px;
+    border:1px solid var(--line); border-radius:4px;
+    background:#fff; cursor:pointer;
+    font-size:12px; color:#333;
+  }
+  .pageBtn:hover{ background:#f5f5f5; }
+  .pageBtn.active{
+    background:#333; color:#fff; border-color:#333;
+  }
+  .pageBtn:disabled{ opacity:.4; cursor:default; }
+
   @media (max-width:640px){
     .pointsValue{ font-size:38px; }
     .pointsUnit{ font-size:18px; }

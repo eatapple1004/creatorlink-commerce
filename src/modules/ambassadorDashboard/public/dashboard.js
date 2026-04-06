@@ -162,4 +162,94 @@ document.getElementById("btnLogout")?.addEventListener("click", async (e) => {
   window.top.location.href = "https://kr.adamthefirstsin.com/pages/ambassador-login?logout=1";
 });
 
+// ── 구매 내역 ──
+
+let ordersPage = 1;
+const ORDERS_LIMIT = 20;
+
+function formatOrderDate(dateStr) {
+  const d = new Date(dateStr);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+  return `${yyyy}.${mm}.${dd} ${hh}:${mi}`;
+}
+
+function formatPrice(val, currency) {
+  const n = parseFloat(val) || 0;
+  if (currency === "KRW") return formatNumber(Math.round(n));
+  return n.toFixed(2);
+}
+
+function renderOrders(data) {
+  const tbody = document.getElementById("ordersBody");
+  if (!data.orders || data.orders.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="ordersEmpty">구매 내역이 없습니다.</td></tr>';
+    document.getElementById("ordersPaging").innerHTML = "";
+    return;
+  }
+
+  tbody.innerHTML = data.orders.map((o) => `
+    <tr>
+      <td>#${o.order_id}</td>
+      <td>${formatPrice(o.total_price, o.currency)}</td>
+      <td>${formatPrice(o.discount_amount, o.currency)}</td>
+      <td>${o.currency || "-"}</td>
+      <td>${formatOrderDate(o.created_at)}</td>
+    </tr>
+  `).join("");
+
+  // 페이지네이션
+  const paging = document.getElementById("ordersPaging");
+  if (data.totalPages <= 1) {
+    paging.innerHTML = "";
+    return;
+  }
+
+  let html = "";
+  html += `<button class="pageBtn" ${data.page <= 1 ? "disabled" : ""} data-page="${data.page - 1}">&lt;</button>`;
+  for (let i = 1; i <= data.totalPages; i++) {
+    if (data.totalPages > 7 && Math.abs(i - data.page) > 2 && i !== 1 && i !== data.totalPages) {
+      if (i === 2 || i === data.totalPages - 1) html += `<span style="font-size:11px;color:#999">...</span>`;
+      continue;
+    }
+    html += `<button class="pageBtn${i === data.page ? " active" : ""}" data-page="${i}">${i}</button>`;
+  }
+  html += `<button class="pageBtn" ${data.page >= data.totalPages ? "disabled" : ""} data-page="${data.page + 1}">&gt;</button>`;
+  paging.innerHTML = html;
+
+  paging.querySelectorAll(".pageBtn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const p = parseInt(btn.dataset.page, 10);
+      if (p >= 1 && p <= data.totalPages) loadOrders(p);
+    });
+  });
+}
+
+async function loadOrders(page = 1) {
+  const token = localStorage.getItem("ambassador_token");
+  if (!token) return;
+
+  try {
+    const res = await fetch(
+      `https://api.adamthefirstsin.com/iframe/ambassador/api/orders?page=${page}&limit=${ORDERS_LIMIT}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include",
+      }
+    );
+    if (!res.ok) throw new Error("주문 조회 실패");
+    const data = await res.json();
+    ordersPage = data.page;
+    renderOrders(data);
+  } catch (err) {
+    console.error("주문 내역 로드 실패:", err);
+    document.getElementById("ordersBody").innerHTML =
+      '<tr><td colspan="5" class="ordersEmpty">데이터를 불러오지 못했습니다.</td></tr>';
+  }
+}
+
 loadDashboard();
+loadOrders();

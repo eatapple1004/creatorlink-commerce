@@ -2,7 +2,7 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import { verifyToken } from "../../middlewares/verifyToken.js";
-import { getMe } from "./ambassadorDashboard.controller.js";
+import { getMe, getOrders } from "./ambassadorDashboard.controller.js";
 
 const router = express.Router();
 
@@ -22,5 +22,8 @@ router.get("/dashboard", (req, res) => {
 
 // 로그인한 앰버서더 데이터 API
 router.get("/api/me", verifyToken, getMe);
+
+// 앰버서더 구매 내역 API
+router.get("/api/orders", verifyToken, getOrders);
 
 export default router;

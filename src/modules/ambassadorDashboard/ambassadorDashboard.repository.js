@@ -22,3 +22,40 @@ export const getAmbassadorDashboardData = async (ambassadorId) => {
   const { rows } = await pool.query(sql, [ambassadorId]);
   return rows[0] || null;
 };
+
+export const getAmbassadorOrders = async (ambassadorId, { page = 1, limit = 20 } = {}) => {
+  const offset = (page - 1) * limit;
+
+  const countSql = `
+    SELECT COUNT(*)::int AS total
+    FROM order_webhook
+    WHERE ambassador_id = $1 AND paid = TRUE
+  `;
+  const countRes = await pool.query(countSql, [ambassadorId]);
+  const total = countRes.rows[0]?.total || 0;
+
+  const sql = `
+    SELECT
+      order_id,
+      total_price,
+      original_price,
+      discount_amount,
+      subtotal_price,
+      tax_amount,
+      gift_card_amount,
+      currency,
+      created_at
+    FROM order_webhook
+    WHERE ambassador_id = $1 AND paid = TRUE
+    ORDER BY created_at DESC
+    LIMIT $2 OFFSET $3
+  `;
+  const { rows } = await pool.query(sql, [ambassadorId, limit, offset]);
+
+  return {
+    orders: rows,
+    total,
+    page,
+    totalPages: Math.ceil(total / limit),
+  };
+};

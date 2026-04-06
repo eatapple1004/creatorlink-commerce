@@ -62,6 +62,29 @@
         </div>
         </section>
 
+        <section class="ordersWrap">
+        <div class="ordersHeader">
+            <h3 class="ordersTitle">구매 내역</h3>
+        </div>
+        <div class="ordersTableWrap">
+            <table class="ordersTable" id="ordersTable">
+            <thead>
+                <tr>
+                <th>주문번호</th>
+                <th>결제금액</th>
+                <th>할인금액</th>
+                <th>통화</th>
+                <th>주문일시</th>
+                </tr>
+            </thead>
+            <tbody id="ordersBody">
+                <tr><td colspan="5" class="ordersEmpty">로딩 중...</td></tr>
+            </tbody>
+            </table>
+        </div>
+        <div class="ordersPaging" id="ordersPaging"></div>
+        </section>
+
         <section class="footnotes">
         <p>*1 point는 1원으로 계산되어 지급됩니다.</p>
         <p>*해외계좌의 경우, 에어월렉스 측의 환율을 따릅니다. (1400krw ≈ 1usd)</p>
