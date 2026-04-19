@@ -1,0 +1,229 @@
+{% comment %}
+  최초 방문 시 국가/통화/언어 선택 모달
+  사용법: theme.liquid의 </body> 바로 위에 {% render 'locale-modal' %} 추가
+{% endcomment %}
+
+<style>
+  .locale-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+  }
+  .locale-overlay.active {
+    display: flex;
+  }
+  .locale-modal {
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 12px;
+    padding: 24px 21px 21px;
+    width: min(300px, 85vw);
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 6px 30px rgba(0,0,0,0.15);
+  }
+  .locale-modal__close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 22px;
+    height: 22px;
+    border: none;
+    background: #e8e8e8;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: #333;
+    line-height: 1;
+  }
+  .locale-modal__close:hover {
+    background: #d0d0d0;
+  }
+  .locale-modal__title {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0 0 18px;
+    color: #111;
+  }
+  .locale-modal__label {
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 6px;
+  }
+  .locale-modal__select-wrap {
+    position: relative;
+    margin-bottom: 15px;
+  }
+  .locale-modal__select-label {
+    position: absolute;
+    top: 6px;
+    left: 11px;
+    font-size: 9px;
+    color: #888;
+    pointer-events: none;
+  }
+  .locale-modal__select {
+    width: 100%;
+    padding: 20px 30px 8px 11px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #111;
+    border: 1px solid #d9d9d9;
+    border-radius: 8px;
+    background: #fff;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+  }
+  .locale-modal__select:focus {
+    outline: none;
+    border-color: #111;
+  }
+  .locale-modal__select-wrap::after {
+    content: '';
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid #333;
+    pointer-events: none;
+  }
+  .locale-modal__hint {
+    font-size: 9px;
+    color: #888;
+    margin: -8px 0 15px;
+    line-height: 1.4;
+  }
+  .locale-modal__submit {
+    width: 100%;
+    padding: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    background: #111;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 6px;
+  }
+  .locale-modal__submit:hover {
+    background: #333;
+  }
+</style>
+
+<div class="locale-overlay" id="localeOverlay">
+  <div class="locale-modal">
+    <button class="locale-modal__close" id="localeClose" aria-label="닫기">&times;</button>
+    <div class="locale-modal__title">국가 또는 지역 선택</div>
+
+    {%- form 'localization', id: 'locale-modal-form' -%}
+
+      <!-- 국가/지역 -->
+      <span class="locale-modal__label">국가/지역</span>
+      <div class="locale-modal__select-wrap">
+        <span class="locale-modal__select-label">국가/지역*</span>
+        <select class="locale-modal__select" name="country_code" id="localeCountry">
+          {%- for country in localization.available_countries -%}
+            <option value="{{ country.iso_code }}"
+              {% if country.iso_code == localization.country.iso_code %} selected{% endif %}>
+              {{ country.name }} ({{ country.currency.iso_code }})
+            </option>
+          {%- endfor -%}
+        </select>
+      </div>
+      <p class="locale-modal__hint">쇼핑 도중에 장소를 변경하시는 경우 쇼핑백에 있는 모든 제품이 삭제되므로 주의하시기 바랍니다.</p>
+
+      <!-- 통화 -->
+      <span class="locale-modal__label">통화</span>
+      <div class="locale-modal__select-wrap">
+        <span class="locale-modal__select-label">통화</span>
+        <select class="locale-modal__select" id="localeCurrency" disabled>
+          <option>{{ localization.country.currency.iso_code }} - {{ localization.country.currency.name }}</option>
+        </select>
+      </div>
+
+      <!-- 언어 -->
+      <span class="locale-modal__label">언어</span>
+      <div class="locale-modal__select-wrap">
+        <span class="locale-modal__select-label">언어</span>
+        <select class="locale-modal__select" name="locale_code" id="localeLanguage">
+          {%- for language in localization.available_languages -%}
+            <option value="{{ language.iso_code }}"
+              {% if language.iso_code == localization.language.iso_code %} selected{% endif %}>
+              {{ language.endonym_name }}
+            </option>
+          {%- endfor -%}
+        </select>
+      </div>
+
+      <button type="submit" class="locale-modal__submit">저장하기</button>
+
+    {%- endform -%}
+  </div>
+</div>
+
+<script>
+  (function() {
+    var STORAGE_KEY = 'locale_selected';
+    var overlay = document.getElementById('localeOverlay');
+    var closeBtn = document.getElementById('localeClose');
+    var form = document.getElementById('locale-modal-form');
+    var countrySelect = document.getElementById('localeCountry');
+    var currencyDisplay = document.getElementById('localeCurrency');
+
+    // 최초 방문 시에만 표시
+    if (!localStorage.getItem(STORAGE_KEY)) {
+      overlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    // 닫기 버튼
+    closeBtn.addEventListener('click', function() {
+      overlay.classList.remove('active');
+      document.body.style.overflow = '';
+      localStorage.setItem(STORAGE_KEY, '1');
+    });
+
+    // 오버레이 바깥 클릭 시 닫기
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) {
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+        localStorage.setItem(STORAGE_KEY, '1');
+      }
+    });
+
+    // 국가 변경 시 통화 표시 업데이트
+    var currencyMap = {};
+    {%- for country in localization.available_countries -%}
+      currencyMap['{{ country.iso_code }}'] = '{{ country.currency.iso_code }} - {{ country.currency.name }}';
+    {%- endfor -%}
+
+    countrySelect.addEventListener('change', function() {
+      var code = this.value;
+      if (currencyMap[code]) {
+        currencyDisplay.innerHTML = '<option>' + currencyMap[code] + '</option>';
+      }
+    });
+
+    // 폼 제출 시 localStorage 저장
+    form.addEventListener('submit', function() {
+      localStorage.setItem(STORAGE_KEY, '1');
+    });
+  })();
+</script>

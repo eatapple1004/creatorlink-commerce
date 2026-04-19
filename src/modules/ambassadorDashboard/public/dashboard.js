@@ -130,6 +130,12 @@ async function loadDashboard() {
     state.sales  = parseInt(data.sales_last_60days, 10) || 0;
     state.gradeLockedUntil = data.grade_locked_until || null;
 
+    // 추천코드 표시
+    if (data.referral_code) {
+      document.getElementById("referralCode").textContent = data.referral_code;
+      document.getElementById("referralWrap").style.display = "inline-flex";
+    }
+
     render();
   } catch (err) {
     console.error("대시보드 로드 실패:", err);
@@ -143,6 +149,15 @@ document.getElementById("btnWithdraw")?.addEventListener("click", (e) => {
   const url = "https://api.adamthefirstsin.com/iframe/ambassador/settlement" +
     (token ? "?token=" + encodeURIComponent(token) : "");
   window.location.href = url;
+});
+
+document.getElementById("btnCopyCode")?.addEventListener("click", () => {
+  const code = document.getElementById("referralCode").textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = document.getElementById("btnCopyCode");
+    btn.textContent = "복사됨!";
+    setTimeout(() => { btn.textContent = "복사"; }, 1500);
+  });
 });
 
 document.getElementById("btnCustomize")?.addEventListener("click", (e) => {

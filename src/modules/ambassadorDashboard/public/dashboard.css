@@ -38,6 +38,20 @@
   .pointsValue{ font-size:44px; font-weight:600; line-height:1; }
   .pointsUnit{ font-size:20px; color:#222; }
   
+  .referralCode{
+    display:inline-flex; align-items:center; gap:8px;
+    background:#fff; border:1px solid var(--line); border-radius:8px;
+    padding:8px 14px; margin:12px 0 4px;
+  }
+  .referralLabel{ font-size:12px; color:var(--muted); }
+  .referralValue{ font-size:14px; font-weight:600; color:#111; letter-spacing:.05em; }
+  .referralCopy{
+    font-size:11px; color:#fff; background:#333;
+    border:none; border-radius:4px; padding:4px 10px;
+    cursor:pointer;
+  }
+  .referralCopy:hover{ background:#555; }
+
   .actions{ margin-top:8px; display:flex; flex-direction:column; gap:10px; }
   .link{ font-size:12px; color:#222; text-decoration:none; }
   .link:hover{ text-decoration:underline; }
