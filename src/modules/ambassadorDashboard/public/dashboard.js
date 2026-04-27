@@ -160,11 +160,6 @@ document.getElementById("btnCopyCode")?.addEventListener("click", () => {
   });
 });
 
-document.getElementById("btnCustomize")?.addEventListener("click", (e) => {
-  e.preventDefault();
-  alert("커스터마이징 기능은 다음 단계에서 연결합니다.");
-});
-
 document.getElementById("btnLogout")?.addEventListener("click", async (e) => {
   e.preventDefault();
   try {
