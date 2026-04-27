@@ -53,7 +53,7 @@
   .referralCopy:hover{ background:#555; }
 
   .actions{ margin-top:8px; display:flex; flex-direction:column; gap:10px; }
-  .link{ font-size:12px; color:#222; text-decoration:none; }
+  .link{ font-size:14px; color:#222; text-decoration:none; }
   .link:hover{ text-decoration:underline; }
   
   .progressWrap{ width:min(920px,100%); margin:24px auto 0; padding:18px 18px 10px; }
