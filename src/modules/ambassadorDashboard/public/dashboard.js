@@ -151,13 +151,38 @@ document.getElementById("btnWithdraw")?.addEventListener("click", (e) => {
   window.location.href = url;
 });
 
-document.getElementById("btnCopyCode")?.addEventListener("click", () => {
-  const code = document.getElementById("referralCode").textContent;
-  navigator.clipboard.writeText(code).then(() => {
-    const btn = document.getElementById("btnCopyCode");
+document.getElementById("btnCopyCode")?.addEventListener("click", async () => {
+  const btn = document.getElementById("btnCopyCode");
+  const code = document.getElementById("referralCode").textContent.trim();
+  if (!code || code === "-") {
+    alert("복사할 추천인 코드가 없습니다.");
+    return;
+  }
+
+  const showCopied = () => {
     btn.textContent = "복사됨!";
     setTimeout(() => { btn.textContent = "복사"; }, 1500);
-  });
+  };
+
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(code);
+      showCopied();
+      return;
+    }
+    const ta = document.createElement("textarea");
+    ta.value = code;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    if (ok) showCopied();
+    else alert("복사에 실패했습니다. 코드를 직접 복사해주세요: " + code);
+  } catch (err) {
+    alert("복사에 실패했습니다. 코드를 직접 복사해주세요: " + code);
+  }
 });
 
 document.getElementById("btnLogout")?.addEventListener("click", async (e) => {
