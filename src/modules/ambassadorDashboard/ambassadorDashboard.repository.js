@@ -12,7 +12,13 @@ export const getAmbassadorDashboardData = async (ambassadorId) => {
       apt.total_withdrawn,
       UPPER(g.code) AS grade_name,
       g.commission_rate,
-      COALESCE(ap.sales_count_60d, 0) AS sales_last_60days,
+      COALESCE((
+        SELECT COUNT(*)::int
+        FROM order_webhook ow
+        WHERE ow.ambassador_id = ap.id
+          AND ow.paid = TRUE
+          AND ow.created_at >= NOW() - INTERVAL '60 days'
+      ), 0) AS sales_last_60days,
       ap.grade_locked_until
     FROM ambassador_profile ap
     JOIN ambassador_points apt ON apt.ambassador_id = ap.id
