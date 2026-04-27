@@ -189,7 +189,7 @@ export const submitWithdrawalService = async ({ ambassador_id, amount }) => {
         transfer_currency:   "KRW",
         transfer_method:     "LOCAL",
         reason:              "professional_business_services",
-        reference:           `ADAM-${ambassador_id}-${Date.now()}`,
+        reference:           `AMB-${ambassador_id}-${Date.now()}`,
         request_id:          requestId,
         source_currency:     "USD",
         swift_charge_option: "SHARED",
