@@ -151,6 +151,44 @@ document.getElementById("btnWithdraw")?.addEventListener("click", (e) => {
   window.location.href = url;
 });
 
+async function tryClipboardAPI(text) {
+  if (!navigator.clipboard || !window.isSecureContext) return false;
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function tryExecCommand(text) {
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.top = "0";
+    ta.style.left = "0";
+    ta.style.width = "1px";
+    ta.style.height = "1px";
+    ta.style.padding = "0";
+    ta.style.border = "none";
+    ta.style.outline = "none";
+    ta.style.boxShadow = "none";
+    ta.style.background = "transparent";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    ta.setSelectionRange(0, text.length);
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
 document.getElementById("btnCopyCode")?.addEventListener("click", async () => {
   const btn = document.getElementById("btnCopyCode");
   const code = document.getElementById("referralCode").textContent.trim();
@@ -159,28 +197,11 @@ document.getElementById("btnCopyCode")?.addEventListener("click", async () => {
     return;
   }
 
-  const showCopied = () => {
+  const ok = (await tryClipboardAPI(code)) || tryExecCommand(code);
+  if (ok) {
     btn.textContent = "복사됨!";
     setTimeout(() => { btn.textContent = "복사"; }, 1500);
-  };
-
-  try {
-    if (navigator.clipboard && window.isSecureContext) {
-      await navigator.clipboard.writeText(code);
-      showCopied();
-      return;
-    }
-    const ta = document.createElement("textarea");
-    ta.value = code;
-    ta.style.position = "fixed";
-    ta.style.opacity = "0";
-    document.body.appendChild(ta);
-    ta.select();
-    const ok = document.execCommand("copy");
-    document.body.removeChild(ta);
-    if (ok) showCopied();
-    else alert("복사에 실패했습니다. 코드를 직접 복사해주세요: " + code);
-  } catch (err) {
+  } else {
     alert("복사에 실패했습니다. 코드를 직접 복사해주세요: " + code);
   }
 });
