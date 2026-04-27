@@ -52,7 +52,7 @@
   }
   .referralCopy:hover{ background:#555; }
 
-  .actions{ margin-top:8px; display:flex; flex-direction:column; gap:10px; }
+  .actions{ margin-top:13px; display:flex; flex-direction:column; gap:10px; }
   .link{ font-size:14px; color:#222; text-decoration:none; }
   .link:hover{ text-decoration:underline; }
   
