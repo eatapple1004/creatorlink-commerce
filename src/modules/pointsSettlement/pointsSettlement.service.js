@@ -193,7 +193,7 @@ export const submitWithdrawalService = async ({ ambassador_id, amount }) => {
         request_id:          requestId,
         source_currency:     "USD",
         swift_charge_option: "SHARED",
-        remarks:             "ADAM",
+        remarks:             "",
       },
     });
     return transfer;
