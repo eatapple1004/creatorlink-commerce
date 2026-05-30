@@ -17,7 +17,7 @@
     display: flex;
   }
   .locale-modal {
-    background: rgba(255, 255, 255, 0.55);
+    background: rgba(255, 255, 255, 0.30);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: 12px;
@@ -148,12 +148,21 @@
       </div>
       <p class="locale-modal__hint">쇼핑 도중에 장소를 변경하시는 경우 쇼핑백에 있는 모든 제품이 삭제되므로 주의하시기 바랍니다.</p>
 
-      <!-- 통화 -->
+      <!-- 통화 (국가와 독립적으로 선택) -->
       <span class="locale-modal__label">통화</span>
       <div class="locale-modal__select-wrap">
         <span class="locale-modal__select-label">통화</span>
-        <select class="locale-modal__select" id="localeCurrency" disabled>
-          <option>{{ localization.country.currency.iso_code }} - {{ localization.country.currency.name }}</option>
+        <select class="locale-modal__select" id="localeCurrency">
+          {%- assign seen_currencies = '' -%}
+          {%- for country in localization.available_countries -%}
+            {%- unless seen_currencies contains country.currency.iso_code -%}
+              {%- assign seen_currencies = seen_currencies | append: country.currency.iso_code | append: ',' -%}
+              <option value="{{ country.currency.iso_code }}"
+                {% if country.currency.iso_code == localization.country.currency.iso_code %} selected{% endif %}>
+                {{ country.currency.iso_code }} - {{ country.currency.name }}
+              </option>
+            {%- endunless -%}
+          {%- endfor -%}
         </select>
       </div>
 
@@ -180,50 +189,84 @@
 <script>
   (function() {
     var STORAGE_KEY = 'locale_selected';
+    var PENDING_KEY = 'locale_pending';
+
+    // Shopify localization 폼 제출 후 리다이렉트로 돌아온 첫 페이지는
+    // 통화/언어가 한 박자 늦게 반영되는 특성이 있다.
+    // 제출 시 심어둔 플래그가 있으면, 한 번만 자동 새로고침해 최신 상태로 맞춘다.
+    if (sessionStorage.getItem(PENDING_KEY)) {
+      sessionStorage.removeItem(PENDING_KEY);
+      window.location.reload();
+      return;
+    }
+
     var overlay = document.getElementById('localeOverlay');
     var closeBtn = document.getElementById('localeClose');
     var form = document.getElementById('locale-modal-form');
-    var countrySelect = document.getElementById('localeCountry');
-    var currencyDisplay = document.getElementById('localeCurrency');
 
-    // 최초 방문 시에만 표시
-    if (!localStorage.getItem(STORAGE_KEY)) {
+    function openModal() {
       overlay.classList.add('active');
       document.body.style.overflow = 'hidden';
     }
-
-    // 닫기 버튼
-    closeBtn.addEventListener('click', function() {
+    function closeModal() {
       overlay.classList.remove('active');
       document.body.style.overflow = '';
       localStorage.setItem(STORAGE_KEY, '1');
-    });
+    }
+    // 다른 스크립트에서도 호출할 수 있게 노출
+    window.openLocaleModal = openModal;
+
+    // 최초 방문 시에만 자동 표시
+    if (!localStorage.getItem(STORAGE_KEY)) {
+      openModal();
+    }
+
+    // 닫기 버튼
+    closeBtn.addEventListener('click', closeModal);
 
     // 오버레이 바깥 클릭 시 닫기
     overlay.addEventListener('click', function(e) {
       if (e.target === overlay) {
-        overlay.classList.remove('active');
-        document.body.style.overflow = '';
-        localStorage.setItem(STORAGE_KEY, '1');
+        closeModal();
       }
     });
 
-    // 국가 변경 시 통화 표시 업데이트
-    var currencyMap = {};
-    {%- for country in localization.available_countries -%}
-      currencyMap['{{ country.iso_code }}'] = '{{ country.currency.iso_code }} - {{ country.currency.name }}';
-    {%- endfor -%}
-
-    countrySelect.addEventListener('change', function() {
-      var code = this.value;
-      if (currencyMap[code]) {
-        currencyDisplay.innerHTML = '<option>' + currencyMap[code] + '</option>';
+    // 푸터의 "Country: ..." 항목을 'Language'로 바꾸고 클릭 시 모달 열기
+    function rewireCountryTrigger() {
+      var els = document.body.getElementsByTagName('*');
+      for (var i = 0; i < els.length; i++) {
+        var el = els[i];
+        var textNode = null;
+        for (var n = 0; n < el.childNodes.length; n++) {
+          var node = el.childNodes[n];
+          if (node.nodeType === 3 && /Country\s*:/.test(node.nodeValue)) {
+            textNode = node;
+            break;
+          }
+        }
+        if (!textNode) continue;
+        textNode.nodeValue = 'Language';
+        var clickable = el.closest('a, button, summary') || el;
+        clickable.style.cursor = 'pointer';
+        clickable.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          openModal();
+        }, true);
       }
-    });
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', rewireCountryTrigger);
+    } else {
+      rewireCountryTrigger();
+    }
 
-    // 폼 제출 시 localStorage 저장
+    // 통화는 국가와 독립적으로 선택되므로 자동 연동하지 않음
+
+    // 폼 제출 시: 모달 다시 안 뜨게 저장 + 제출 후 1회 자동 새로고침 예약
     form.addEventListener('submit', function() {
       localStorage.setItem(STORAGE_KEY, '1');
+      sessionStorage.setItem(PENDING_KEY, '1');
     });
   })();
 </script>
