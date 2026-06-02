@@ -104,10 +104,11 @@
     pointer-events: none;
   }
   .locale-modal__hint {
-    font-size: 9px;
-    color: #888;
-    margin: -8px 0 15px;
-    line-height: 1.4;
+    font-size: 10px;
+    font-weight: 600;
+    color: #333;
+    margin: -4px 0 15px;
+    line-height: 1.45;
   }
   .locale-modal__submit {
     width: 100%;
@@ -126,17 +127,96 @@
   }
 </style>
 
+{%- liquid
+  # 로케일 파일(키 3,400개 한도)에 의존하지 않도록 번역을 여기서 직접 처리
+  assign lang = localization.language.iso_code | downcase
+  case lang
+    when 'ko'
+      assign t_title = '국가 또는 지역 선택'
+      assign t_country = '국가/지역'
+      assign t_currency = '통화'
+      assign t_language = '언어'
+      assign t_hint = '현재 선택 가능한 국가 및 지역에 한해 주문이 가능합니다. 찾으시는 지역이 보이지 않으신가요? 문의를 남겨주시면 신속히 서비스 권역을 확대해 드리겠습니다.'
+      assign t_save = '저장하기'
+      assign t_close = '닫기'
+    when 'ja'
+      assign t_title = '国または地域を選択'
+      assign t_country = '国/地域'
+      assign t_currency = '通貨'
+      assign t_language = '言語'
+      assign t_hint = '現在選択可能な国・地域に限りご注文いただけます。お探しの地域が表示されていませんか？お問い合わせいただければ、迅速にサービス対象地域を拡大いたします。'
+      assign t_save = '保存する'
+      assign t_close = '閉じる'
+    when 'zh-cn', 'zh-hans'
+      assign t_title = '选择国家或地区'
+      assign t_country = '国家/地区'
+      assign t_currency = '货币'
+      assign t_language = '语言'
+      assign t_hint = '仅限当前可选的国家和地区下单。没有找到您所在的地区吗？请留言咨询，我们将尽快扩大服务范围。'
+      assign t_save = '保存'
+      assign t_close = '关闭'
+    when 'zh-tw', 'zh-hant'
+      assign t_title = '選擇國家或地區'
+      assign t_country = '國家/地區'
+      assign t_currency = '貨幣'
+      assign t_language = '語言'
+      assign t_hint = '僅限目前可選的國家和地區下單。沒有找到您所在的地區嗎？請留言諮詢，我們將盡快擴大服務範圍。'
+      assign t_save = '儲存'
+      assign t_close = '關閉'
+    when 'de'
+      assign t_title = 'Land oder Region auswählen'
+      assign t_country = 'Land/Region'
+      assign t_currency = 'Währung'
+      assign t_language = 'Sprache'
+      assign t_hint = 'Bestellungen sind nur für die derzeit aufgeführten Länder und Regionen möglich. Ihre Region ist nicht dabei? Hinterlassen Sie uns eine Anfrage und wir erweitern unser Liefergebiet schnellstmöglich.'
+      assign t_save = 'Speichern'
+      assign t_close = 'Schließen'
+    when 'fr'
+      assign t_title = 'Sélectionner un pays ou une région'
+      assign t_country = 'Pays/région'
+      assign t_currency = 'Devise'
+      assign t_language = 'Langue'
+      assign t_hint = 'Les commandes ne sont possibles que pour les pays et régions actuellement répertoriés. Vous ne voyez pas votre région ? Laissez-nous une demande et nous étendrons rapidement notre zone de service.'
+      assign t_save = 'Enregistrer'
+      assign t_close = 'Fermer'
+    when 'es'
+      assign t_title = 'Seleccionar país o región'
+      assign t_country = 'País/región'
+      assign t_currency = 'Moneda'
+      assign t_language = 'Idioma'
+      assign t_hint = 'Solo se pueden realizar pedidos para los países y regiones disponibles actualmente. ¿No encuentra su región? Déjenos una consulta y ampliaremos rápidamente nuestra área de servicio.'
+      assign t_save = 'Guardar'
+      assign t_close = 'Cerrar'
+    when 'pt-br'
+      assign t_title = 'Selecionar país ou região'
+      assign t_country = 'País/região'
+      assign t_currency = 'Moeda'
+      assign t_language = 'Idioma'
+      assign t_hint = 'Os pedidos estão disponíveis apenas para os países e regiões listados atualmente. Não encontrou sua região? Deixe-nos uma solicitação e expandiremos rapidamente nossa área de atendimento.'
+      assign t_save = 'Salvar'
+      assign t_close = 'Fechar'
+    else
+      assign t_title = 'Select country or region'
+      assign t_country = 'Country/region'
+      assign t_currency = 'Currency'
+      assign t_language = 'Language'
+      assign t_hint = "Orders are available only for the countries and regions currently listed. Don't see your region? Leave us an inquiry and we'll work quickly to expand our service area."
+      assign t_save = 'Save'
+      assign t_close = 'Close'
+  endcase
+-%}
+
 <div class="locale-overlay" id="localeOverlay">
   <div class="locale-modal">
-    <button class="locale-modal__close" id="localeClose" aria-label="닫기">&times;</button>
-    <div class="locale-modal__title">국가 또는 지역 선택</div>
+    <button class="locale-modal__close" id="localeClose" aria-label="{{ t_close }}">&times;</button>
+    <div class="locale-modal__title">{{ t_title }}</div>
 
     {%- form 'localization', id: 'locale-modal-form' -%}
 
       <!-- 국가/지역 -->
-      <span class="locale-modal__label">국가/지역</span>
+      <span class="locale-modal__label">{{ t_country }}</span>
       <div class="locale-modal__select-wrap">
-        <span class="locale-modal__select-label">국가/지역*</span>
+        <span class="locale-modal__select-label">{{ t_country }}*</span>
         <select class="locale-modal__select" name="country_code" id="localeCountry">
           {%- for country in localization.available_countries -%}
             <option value="{{ country.iso_code }}"
@@ -146,12 +226,12 @@
           {%- endfor -%}
         </select>
       </div>
-      <p class="locale-modal__hint">쇼핑 도중에 장소를 변경하시는 경우 쇼핑백에 있는 모든 제품이 삭제되므로 주의하시기 바랍니다.</p>
+      <p class="locale-modal__hint">{{ t_hint }}</p>
 
       <!-- 통화 (국가와 독립적으로 선택) -->
-      <span class="locale-modal__label">통화</span>
+      <span class="locale-modal__label">{{ t_currency }}</span>
       <div class="locale-modal__select-wrap">
-        <span class="locale-modal__select-label">통화</span>
+        <span class="locale-modal__select-label">{{ t_currency }}</span>
         <select class="locale-modal__select" id="localeCurrency">
           {%- assign seen_currencies = '' -%}
           {%- for country in localization.available_countries -%}
@@ -167,9 +247,9 @@
       </div>
 
       <!-- 언어 -->
-      <span class="locale-modal__label">언어</span>
+      <span class="locale-modal__label">{{ t_language }}</span>
       <div class="locale-modal__select-wrap">
-        <span class="locale-modal__select-label">언어</span>
+        <span class="locale-modal__select-label">{{ t_language }}</span>
         <select class="locale-modal__select" name="locale_code" id="localeLanguage">
           {%- for language in localization.available_languages -%}
             <option value="{{ language.iso_code }}"
@@ -180,7 +260,7 @@
         </select>
       </div>
 
-      <button type="submit" class="locale-modal__submit">저장하기</button>
+      <button type="submit" class="locale-modal__submit">{{ t_save }}</button>
 
     {%- endform -%}
   </div>
@@ -203,6 +283,10 @@
     var overlay = document.getElementById('localeOverlay');
     var closeBtn = document.getElementById('localeClose');
     var form = document.getElementById('locale-modal-form');
+
+    // 푸터 트리거에 표시할 '언어' 라벨(현재 언어로 번역됨)과 현재 국가명(네이티브 선택기 매칭용)
+    var LOCALE_LABEL = {{ t_language | json }};
+    var LOCALE_COUNTRY = {{ localization.country.name | json }};
 
     function openModal() {
       overlay.classList.add('active');
@@ -231,22 +315,13 @@
       }
     });
 
-    // 푸터의 "Country: ..." 항목을 'Language'로 바꾸고 클릭 시 모달 열기
-    function rewireCountryTrigger() {
-      var els = document.body.getElementsByTagName('*');
-      for (var i = 0; i < els.length; i++) {
-        var el = els[i];
-        var textNode = null;
-        for (var n = 0; n < el.childNodes.length; n++) {
-          var node = el.childNodes[n];
-          if (node.nodeType === 3 && /Country\s*:/.test(node.nodeValue)) {
-            textNode = node;
-            break;
-          }
-        }
-        if (!textNode) continue;
-        textNode.nodeValue = 'Language';
-        var clickable = el.closest('a, button, summary') || el;
+    // 푸터의 언어 트리거(#locale 링크)를 찾아 라벨을 현재 언어로 맞추고 클릭 시 모달 열기.
+    function rewireLocaleTrigger() {
+      var overlayEl = document.getElementById('localeOverlay');
+
+      function bind(clickable) {
+        if (!clickable || clickable.getAttribute('data-locale-bound')) return;
+        clickable.setAttribute('data-locale-bound', '1');
         clickable.style.cursor = 'pointer';
         clickable.addEventListener('click', function(e) {
           e.preventDefault();
@@ -254,11 +329,48 @@
           openModal();
         }, true);
       }
+      function setLabel(a) {
+        // 라벨(span 우선)을 현재 언어의 '언어' 단어로 교체.
+        // 메뉴 항목 번역이 잘못돼 '國家：美國' 같은 텍스트여도 항상 올바른 라벨로 보정한다.
+        var labelEl = a.querySelector('span') || a;
+        labelEl.textContent = LOCALE_LABEL;
+      }
+
+      // 1) (권장) href에 '#locale' 마커가 있는 메뉴 링크
+      var marked = document.querySelectorAll('a[href*="#locale"]');
+      for (var m = 0; m < marked.length; m++) {
+        var a = marked[m];
+        if (overlayEl && overlayEl.contains(a)) continue;
+        setLabel(a);
+        if (a.style.display === 'none') a.style.display = '';  // 이전 버전이 숨겼을 수 있어 복구
+        bind(a);
+      }
+      if (marked.length > 0) return;
+
+      // 2) (폴백) #locale 마커가 전혀 없을 때만, 텍스트로 네이티브 국가 선택기를 찾아 교체
+      var els = document.body.getElementsByTagName('*');
+      for (var i = 0; i < els.length; i++) {
+        var el = els[i];
+        if (overlayEl && overlayEl.contains(el)) continue;
+        for (var n = 0; n < el.childNodes.length; n++) {
+          var node = el.childNodes[n];
+          if (node.nodeType !== 3) continue;
+          var raw = node.nodeValue;
+          var isCountrySelector =
+            /Country\s*:/i.test(raw) ||
+            /[国國]家/.test(raw) ||
+            (LOCALE_COUNTRY && raw.indexOf(LOCALE_COUNTRY) !== -1);
+          if (!isCountrySelector && raw.trim() !== 'Language') continue;
+          node.nodeValue = LOCALE_LABEL;
+          bind(el.closest('a, button, summary') || el);
+          break;
+        }
+      }
     }
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', rewireCountryTrigger);
+      document.addEventListener('DOMContentLoaded', rewireLocaleTrigger);
     } else {
-      rewireCountryTrigger();
+      rewireLocaleTrigger();
     }
 
     // 통화는 국가와 독립적으로 선택되므로 자동 연동하지 않음
