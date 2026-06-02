@@ -26,4 +26,4 @@ router.get("/api/me", verifyToken, getMe);
 // 앰버서더 구매 내역 API
 router.get("/api/orders", verifyToken, getOrders);
 
-export default router;
+export default router; 
