@@ -3,6 +3,7 @@ import * as ambassadorRepo from "../repositories/ambassador.repository.js";
 import * as orderWebhookRepo from "../repositories/orderWebhook.repository.js";
 import * as pointsService from "./points.service.js";
 import { updateDiscountRate } from "./shopifyDiscount.service.js";
+import { getUsdToKrwRate } from "./airwallexFx.service.js";
 import logger from "../config/logger.js";
 
 /**
@@ -225,33 +226,45 @@ export const processOrderPaid = async (order, store) => {
     if (cashPaid <= 0) {
       logger.info(`🎁 [Shopify] 기프트카드 전액 결제 → 포인트 적립 스킵 (order_id=${orderId}, gift_card=${giftCardAmount})`);
     } else {
+      // 해외(비 KRW) 주문이면 Airwallex 환율로 KRW 환산해 적립.
+      // 포인트/잔액은 단일 KRW 기준이므로 적립 금액을 KRW 로 맞춘다.
+      const orderCurrency = (order.currency || "KRW").toUpperCase();
+      const isForeign = orderCurrency !== "KRW";
+      const fxRate = isForeign ? await getUsdToKrwRate() : 1;
+
       // 기프트카드 비율 계산 (혼합 결제 시 각 아이템에 비례 적용)
       const cashRatio = totalPrice > 0 ? cashPaid / totalPrice : 0;
 
-      // line_items에서 sku + 실결제금액 계산
+      // line_items에서 sku + 실결제금액 계산 (KRW 환산 적용)
       // discount_allocations 합산으로 정확한 할인금액 반영
       const lineItems = (order.line_items || []).map((item) => {
         const grossAmount      = Number(item.price) * Number(item.quantity);
         const discountAmount   = (item.discount_allocations || [])
           .reduce((sum, d) => sum + Number(d.amount || 0), 0);
         const afterDiscount = Math.max(0, grossAmount - discountAmount);
-        // 기프트카드 비율 적용 → 현금 결제분만 포인트 대상
-        const paidAmount = Math.round(afterDiscount * cashRatio * 100) / 100;
+        // 기프트카드 비율 + 환율 적용 → 현금 결제분(KRW 환산)만 포인트 대상
+        const paidAmount = Math.round(afterDiscount * cashRatio * fxRate * 100) / 100;
 
         return {
           sku:        item.sku,
-          paidAmount, // 현금 실결제금액 (할인 + 기프트카드 적용 후)
+          paidAmount, // 현금 실결제금액 KRW (할인 + 기프트카드 + 환율 적용 후)
         };
       });
 
-      logger.info(`💰 [Shopify] 포인트 계산 → total=${totalPrice}, giftCard=${giftCardAmount}, cash=${cashPaid}, ratio=${cashRatio.toFixed(4)}`);
+      const cashPaidKrw = Math.round(cashPaid * fxRate * 100) / 100;
+
+      logger.info(`💰 [Shopify] 포인트 계산 → currency=${orderCurrency}, fx=${fxRate}, total=${totalPrice}, giftCard=${giftCardAmount}, cash=${cashPaid}, cashKRW=${cashPaidKrw}, ratio=${cashRatio.toFixed(4)}`);
+
+      const description = isForeign
+        ? `Shopify 주문(${orderId}) 결제 적립 [${orderCurrency} ${cashPaid} × ${fxRate} = ₩${cashPaidKrw}]`
+        : `Shopify 주문(${orderId}) 결제 적립`;
 
       const result = await pointsService.addPointsByShopifyOrderService({
         ambassador_id: saved.ambassador_id,
         order_id: shopifyRef(store, orderId), // 멱등 키 스토어 네임스페이스
         lineItems,
-        amount: cashPaid, // lineItems 없을 때 fallback
-        description: `Shopify 주문(${orderId}) 결제 적립`,
+        amount: cashPaidKrw, // lineItems 없을 때 fallback (KRW 환산)
+        description,
       });
 
       if (result?.skipped) {
