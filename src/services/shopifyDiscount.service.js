@@ -85,9 +85,12 @@ async function createDiscountCodeForStore(store, { referralCode, discountRate })
         value: { percentage: discountRate / 100 },
         items: { all: true },
       },
-      combinesWithProductDiscounts: false,
-      combinesWithShippingDiscounts: false,
-      combinesWithOrderDiscounts: false,
+      // 중첩 객체 구조 (top-level combinesWith* 필드는 DiscountCodeBasicInput 에 없음)
+      combinesWith: {
+        orderDiscounts: false,
+        productDiscounts: false,
+        shippingDiscounts: false,
+      },
       usageLimit: null,
     },
   };
@@ -112,26 +115,17 @@ async function createDiscountCodeForStore(store, { referralCode, discountRate })
  * @returns {string|null} price_rule_id (없으면 null)
  */
 async function findDiscountIdByCode(store, code) {
+  // 코드 문자열로 할인 노드를 찾는 전용 쿼리
   const query = `
-    query($q: String!) {
-      codeDiscountNodes(first: 1, query: $q) {
-        nodes {
-          id
-          codeDiscount {
-            ... on DiscountCodeBasic {
-              codes(first: 1) { nodes { code } }
-            }
-          }
-        }
+    query($code: String!) {
+      codeDiscountNodeByCode(code: $code) {
+        id
       }
     }
   `;
-  const data = await shopifyGraphQL(store, query, { q: `code:"${code}"` });
-  const node = data?.codeDiscountNodes?.nodes?.[0];
+  const data = await shopifyGraphQL(store, query, { code });
+  const node = data?.codeDiscountNodeByCode;
   if (!node) return null;
-  // 정확히 일치하는 코드인지 확인 (부분매칭 방어)
-  const found = node.codeDiscount?.codes?.nodes?.[0]?.code;
-  if (found && found.toLowerCase() !== String(code).toLowerCase()) return null;
   return node.id.split("/").pop();
 }
 
