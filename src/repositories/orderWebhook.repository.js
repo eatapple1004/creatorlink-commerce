@@ -4,6 +4,7 @@ import pool from "../config/db.js";
 
 export const upsertOrder = async ({
   orderId,
+  shopDomain = null,
   discountCode = null,
   ambassadorId = null,
   paid = false,
@@ -19,16 +20,16 @@ export const upsertOrder = async ({
 }) => {
   const sql = `
     INSERT INTO order_webhook (
-      order_id, discount_code, ambassador_id, paid, currency,
+      order_id, shop_domain, discount_code, ambassador_id, paid, currency,
       total_price, original_price, discount_amount, subtotal_price, tax_amount,
       line_items, created_at, updated_at
     )
     VALUES (
-      $1, $2, $3, $4, $5,
-      $6, $7, $8, $9, $10,
-      $11, NOW(), NOW()
+      $1, $2, $3, $4, $5, $6,
+      $7, $8, $9, $10, $11,
+      $12, NOW(), NOW()
     )
-    ON CONFLICT (order_id)
+    ON CONFLICT (order_id, shop_domain)
     DO UPDATE SET
       discount_code = COALESCE(EXCLUDED.discount_code, order_webhook.discount_code),
       ambassador_id = COALESCE(EXCLUDED.ambassador_id, order_webhook.ambassador_id),
@@ -54,6 +55,7 @@ export const upsertOrder = async ({
 
   const values = [
     orderId,
+    shopDomain,
     discountCode,
     ambassadorId,
     paid,
@@ -70,32 +72,32 @@ export const upsertOrder = async ({
   return res.rows[0];
 };
 
-export const findOrderById = async (orderId) => {
-  const sql = `SELECT * FROM order_webhook WHERE order_id = $1`;
-  const res = await query(sql, [orderId]);
+export const findOrderById = async (orderId, shopDomain = null) => {
+  const sql = `SELECT * FROM order_webhook WHERE order_id = $1 AND shop_domain = $2`;
+  const res = await query(sql, [orderId, shopDomain]);
   return res.rows[0] || null;
 };
 
 /**
  * 기프트카드 결제 금액 누적 저장
  */
-export const addGiftCardAmount = async (orderId, amount) => {
+export const addGiftCardAmount = async (orderId, amount, shopDomain = null) => {
   const sql = `
     UPDATE order_webhook
     SET gift_card_amount = COALESCE(gift_card_amount, 0) + $2, updated_at = NOW()
-    WHERE order_id = $1
+    WHERE order_id = $1 AND shop_domain = $3
     RETURNING *;
   `;
-  const res = await pool.query(sql, [orderId, amount]);
+  const res = await pool.query(sql, [orderId, amount, shopDomain]);
   // order_webhook 레코드가 없으면 나중에 upsert 시 반영되도록 임시 저장
   if (res.rowCount === 0) {
     await pool.query(
-      `INSERT INTO order_webhook (order_id, gift_card_amount, paid, created_at, updated_at)
-       VALUES ($1, $2, FALSE, NOW(), NOW())
-       ON CONFLICT (order_id) DO UPDATE SET
+      `INSERT INTO order_webhook (order_id, shop_domain, gift_card_amount, paid, created_at, updated_at)
+       VALUES ($1, $3, $2, FALSE, NOW(), NOW())
+       ON CONFLICT (order_id, shop_domain) DO UPDATE SET
          gift_card_amount = COALESCE(order_webhook.gift_card_amount, 0) + $2,
          updated_at = NOW()`,
-      [orderId, amount]
+      [orderId, amount, shopDomain]
     );
   }
   return res.rows[0];

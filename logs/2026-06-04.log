@@ -1,0 +1,4 @@
+[2026-06-04 22:20:29] warn: 🟨 [ShopifyStores] 'korea' 스토어 도메인 미설정 → 비활성
+[2026-06-04 22:20:29] info: 🏬 [ShopifyStores] 활성 스토어: global(mmjnwe-fr.myshopify.com)
+[2026-06-04 22:32:17] warn: 🟨 [ShopifyStores] 'global' 스토어 도메인 미설정 → 비활성
+[2026-06-04 22:32:17] info: 🏬 [ShopifyStores] 활성 스토어: korea(mmjnwe-fr.myshopify.com)

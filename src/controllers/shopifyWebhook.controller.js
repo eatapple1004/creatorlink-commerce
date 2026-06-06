@@ -1,18 +1,29 @@
 // controllers/shopifyWebhook.controller.js
 
 import * as shopifyWebhookService from "../services/shopifyWebhook.service.js";
+import { getStoreByDomain } from "../config/shopifyStores.js";
 import crypto from "crypto";
 import logger from "../config/logger.js";
 
 /**
- * 🔐 Shopify HMAC Signature 검증 함수
+ * 웹훅 요청에서 스토어를 식별한다.
+ * - Shopify는 모든 웹훅에 x-shopify-shop-domain 헤더를 실어 보낸다.
+ * @returns {object|null} 등록된 스토어 또는 null
  */
-export const verifyHmac = (req) => {
-    const secret = process.env.SHOPIFY_WEBHOOK_SECRET;
+const resolveStore = (req) => {
+    const shopDomain = req.headers["x-shopify-shop-domain"];
+    return getStoreByDomain(shopDomain);
+};
+
+/**
+ * 🔐 Shopify HMAC Signature 검증 함수 (스토어별 시크릿 사용)
+ */
+export const verifyHmac = (req, store) => {
+    const secret = store?.webhookSecret;
+    if (!secret) return false;
+
     const hmacHeader = req.headers["x-shopify-hmac-sha256"];
     const body = req.body; // RAW BODY
-    
-    logger.info(body);
 
     const generated = crypto
         .createHmac("sha256", secret)
@@ -27,18 +38,23 @@ export const verifyHmac = (req) => {
  */
 export const handleOrderCreate = async (req, res) => {
     try {
-        logger.info("📥 [Shopify] orders/create webhook received.");
+        const store = resolveStore(req);
+        if (!store) {
+            logger.warn(`❌ [Shopify] 미등록 스토어 도메인 → ${req.headers["x-shopify-shop-domain"]}`);
+            return res.status(401).send("unknown shop");
+        }
 
-        if (!verifyHmac(req)) {
-            logger.warn("❌ [Shopify] HMAC verification failed (orders/create)");
+        logger.info(`📥 [Shopify:${store.key}] orders/create webhook received.`);
+
+        if (!verifyHmac(req, store)) {
+            logger.warn(`❌ [Shopify:${store.key}] HMAC verification failed (orders/create)`);
             return res.status(401).send("invalid hmac");
         }
 
         const data = JSON.parse(req.body.toString());
-        logger.info(data);
-        logger.info(`🟦 OrderCreate → order_id=${data.id}`);
+        logger.info(`🟦 [${store.key}] OrderCreate → order_id=${data.id}`);
 
-        await shopifyWebhookService.processOrderCreate(data);
+        await shopifyWebhookService.processOrderCreate(data, store);
 
         res.status(200).send("ok");
     } catch (err) {
@@ -52,18 +68,23 @@ export const handleOrderCreate = async (req, res) => {
  */
 export const handleRefund = async (req, res) => {
     try {
-        logger.info("📥 [Shopify] refunds/create webhook received.");
+        const store = resolveStore(req);
+        if (!store) {
+            logger.warn(`❌ [Shopify] 미등록 스토어 도메인 → ${req.headers["x-shopify-shop-domain"]}`);
+            return res.status(401).send("unknown shop");
+        }
 
-        if (!verifyHmac(req)) {
-            logger.warn("❌ [Shopify] HMAC verification failed (refunds/create)");
+        logger.info(`📥 [Shopify:${store.key}] refunds/create webhook received.`);
+
+        if (!verifyHmac(req, store)) {
+            logger.warn(`❌ [Shopify:${store.key}] HMAC verification failed (refunds/create)`);
             return res.status(401).send("invalid hmac");
         }
 
         const data = JSON.parse(req.body.toString());
-        logger.info(`🟥 Refund → refund_id=${data.id}, order_id=${data.order_id}`);
-        logger.info(data);
+        logger.info(`🟥 [${store.key}] Refund → refund_id=${data.id}, order_id=${data.order_id}`);
 
-        await shopifyWebhookService.processRefund(data);
+        await shopifyWebhookService.processRefund(data, store);
 
         res.status(200).send("ok");
     } catch (err) {
@@ -77,17 +98,23 @@ export const handleRefund = async (req, res) => {
  */
 export const handleOrderPaid = async (req, res) => {
     try {
-        logger.info("📥 [Shopify] orders/paid webhook received.");
+        const store = resolveStore(req);
+        if (!store) {
+            logger.warn(`❌ [Shopify] 미등록 스토어 도메인 → ${req.headers["x-shopify-shop-domain"]}`);
+            return res.status(401).send("unknown shop");
+        }
 
-        if (!verifyHmac(req)) {
-            logger.warn("❌ [Shopify] HMAC verification failed (orders/paid)");
+        logger.info(`📥 [Shopify:${store.key}] orders/paid webhook received.`);
+
+        if (!verifyHmac(req, store)) {
+            logger.warn(`❌ [Shopify:${store.key}] HMAC verification failed (orders/paid)`);
             return res.status(401).send("invalid hmac");
         }
 
         const data = JSON.parse(req.body.toString());
-        logger.info(`🟩 OrderPaid → order_id=${data.id}`);
-        logger.info(data);
-        await shopifyWebhookService.processOrderPaid(data);
+        logger.info(`🟩 [${store.key}] OrderPaid → order_id=${data.id}`);
+
+        await shopifyWebhookService.processOrderPaid(data, store);
 
         res.status(200).send("ok");
     } catch (err) {

@@ -18,6 +18,23 @@ function extractRefundAmount(refund) {
 const n = (v) => (v === null || v === undefined ? null : Number(v));
 
 /**
+ * 포인트 멱등 키(reference_id) 네임스페이싱
+ *
+ * 목적:
+ * - Shopify 주문/환불 ID는 스토어 단위로만 유니크 → 스토어 간 충돌 방지
+ *
+ * 규칙:
+ * - 레거시(GLOBAL) 스토어: id 그대로 (기존 적립 내역 멱등성 보존)
+ * - 그 외 스토어: `${store.key}:${id}` 로 네임스페이스
+ *
+ * 주의:
+ * - transaction_log.reference_id 에 그대로 저장/조회되므로
+ *   add(적립)와 deduct(차감)에서 동일 규칙으로 사용해야 일관성 유지
+ */
+const shopifyRef = (store, id) =>
+  store?.isLegacy ? id : `${store.key}:${id}`;
+
+/**
  * Shopify webhook payload가 실제 Order 객체인지 판별
  *
  * 목적:
@@ -69,12 +86,14 @@ function extractDiscountCode(order) {
  * - 금액은 확정값이 아닐 수 있음
  * - 포인트 적립은 하지 않음
  */
-export const processOrderCreate = async (order) => {
+export const processOrderCreate = async (order, store) => {
+  const shopDomain = store?.domain || null;
+
   // 기프트카드 트랜잭션 감지 → 금액 저장
   if (!isOrderPayload(order) && order?.gateway === "gift_card" && order?.order_id && order?.kind === "sale") {
     const gcAmount = Number(order.amount || 0);
     if (gcAmount > 0) {
-      await orderWebhookRepo.addGiftCardAmount(order.order_id, gcAmount);
+      await orderWebhookRepo.addGiftCardAmount(order.order_id, gcAmount, shopDomain);
       logger.info(`🎁 [Shopify] 기프트카드 결제 금액 저장 → order_id=${order.order_id}, amount=${gcAmount}`);
     }
     return;
@@ -103,6 +122,7 @@ export const processOrderCreate = async (order) => {
 
   await orderWebhookRepo.upsertOrder({
     orderId,
+    shopDomain,
     discountCode,
     ambassadorId: ambassador?.id || null,
     paid: false,
@@ -139,12 +159,13 @@ export const processOrderCreate = async (order) => {
  * - 동일 order_id로 여러 번 호출돼도
  *   포인트는 한 번만 적립되도록 설계해야 함
  */
-export const processOrderPaid = async (order) => {
+export const processOrderPaid = async (order, store) => {
   if (!isOrderPayload(order)) {
     logger.warn(`🟨 [Shopify] orders/paid received but NOT an Order payload → skip (id=${order?.id})`);
     return;
   }
 
+  const shopDomain = store?.domain || null;
   const orderId = order.id;
 
   // 결제 확정 금액 추출 (net 기준)
@@ -174,6 +195,7 @@ export const processOrderPaid = async (order) => {
   // 주문 정보 확정 저장 (record 없으면 생성)
   const saved = await orderWebhookRepo.upsertOrder({
     orderId,
+    shopDomain,
     discountCode,
     ambassadorId: ambassador?.id || null,
     paid: true,
@@ -190,7 +212,7 @@ export const processOrderPaid = async (order) => {
   // ambassador 존재 시 포인트 적립 + 등급 업데이트
   if (saved?.ambassador_id && totalPrice !== null) {
     // 기프트카드 결제 금액 조회
-    const orderRecord = await orderWebhookRepo.findOrderById(orderId);
+    const orderRecord = await orderWebhookRepo.findOrderById(orderId, shopDomain);
     const giftCardAmount = Number(orderRecord?.gift_card_amount || 0);
 
     // 기프트카드 전액 결제 시 (payment_gateway_names로도 체크)
@@ -226,7 +248,7 @@ export const processOrderPaid = async (order) => {
 
       const result = await pointsService.addPointsByShopifyOrderService({
         ambassador_id: saved.ambassador_id,
-        order_id: orderId,
+        order_id: shopifyRef(store, orderId), // 멱등 키 스토어 네임스페이스
         lineItems,
         amount: cashPaid, // lineItems 없을 때 fallback
         description: `Shopify 주문(${orderId}) 결제 적립`,
@@ -280,7 +302,8 @@ export const processOrderPaid = async (order) => {
  * - ambassador_id 없음
  * - 환불 트랜잭션 금액이 0 이하
  */
-export const processRefund = async (refund) => {
+export const processRefund = async (refund, store) => {
+  const shopDomain = store?.domain || null;
   const refundId = refund.id;
   const orderId = refund.order_id;
 
@@ -289,8 +312,8 @@ export const processRefund = async (refund) => {
     return;
   }
 
-  // 주문 정보 조회 → ambassador_id 확인
-  const order = await orderWebhookRepo.findOrderById(orderId);
+  // 주문 정보 조회 → ambassador_id 확인 (스토어 단위)
+  const order = await orderWebhookRepo.findOrderById(orderId, shopDomain);
   if (!order || !order.ambassador_id) {
     logger.info(`🟨 [Shopify] refunds/create: ambassador 없음 → skip (order_id=${orderId})`);
     return;
@@ -305,8 +328,8 @@ export const processRefund = async (refund) => {
 
   const result = await pointsService.deductPointsByShopifyRefundService({
     ambassador_id:  order.ambassador_id,
-    refund_id:      refundId,
-    order_id:       orderId,
+    refund_id:      shopifyRef(store, refundId), // 멱등 키 스토어 네임스페이스
+    order_id:       shopifyRef(store, orderId),  // 적립 시 사용한 reference_id 와 동일 규칙
     refund_amount:  refundAmount,
     original_total: order.total_price, // 원래 주문 금액 (비례 계산용)
     description: `Shopify 환불(주문 ${orderId}) 포인트 차감`,

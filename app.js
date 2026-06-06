@@ -12,6 +12,7 @@ import pointsRouter   from "./src/routes/points.route.js"
 import withdrawRouter from "./src/routes/withdraw.route.js";
 import paypalWebhook  from "./src/routes/paypalWebhook.route.js";
 import shopifyWebhook from "./src/routes/shopifyWebhook.routes.js";
+import shopifyOAuth   from "./src/routes/shopifyOAuth.routes.js";
 
 import airwallex                  from "./src/routes/airwallex.route.js";
 import airwallexBeneficiaryRoutes from "./src/routes/airwallexBeneficiary.routes.js";
@@ -69,6 +70,7 @@ app.use("/api/points",          pointsRouter);
 app.use("/api/withdraw",        withdrawRouter);
 app.use("/api/paypal",          paypalWebhook);
 app.use("/api/shopify/webhook", shopifyWebhook);
+app.use("/api/shopify/oauth",   shopifyOAuth);
 
 app.use("/api/airwallex", airwallex);
 app.use("/api/airwallex", airwallexBeneficiaryRoutes);
